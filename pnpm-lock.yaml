@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      pnpm:
+        specifier: ^10.21.0
+        version: 10.21.0
       reka-ui:
         specifier: ^2.2.1
         version: 2.2.1(vue@3.5.13)
@@ -12722,6 +12725,12 @@ packages:
   /pluralize@8.0.0:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
     engines: {node: '>=4'}
+    dev: false
+
+  /pnpm@10.21.0:
+    resolution: {integrity: sha512-2jM3Jn5AD909R5psaAeaxtsB2MpPZ1cgg+cid1p5Z4inqZVmE3SeAA+sINQktZT3p5Gl9OLhNYHF75R/JpaKQA==}
+    engines: {node: '>=18.12'}
+    hasBin: true
     dev: false
 
   /pony-cause@2.1.11:

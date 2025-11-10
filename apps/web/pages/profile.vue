@@ -71,6 +71,7 @@ const handleCitySelected = ({ city }) => {
 setData('cityId', city, 1 , 'd')
 }
 
+const suslic = ref('/images/suslo.svg')
 </script>
 
 
@@ -102,10 +103,10 @@ setData('cityId', city, 1 , 'd')
                     <TwentyText>твой суслик</TwentyText>
                 </div>
                 <div class="ch-area">
-                    <img src="../public/images/suslo.svg" class="p">
+                    <img :src="suslic" class="p" style="height: 202px;">
                     <div class="inventar-area">
-                        <Block class="e"><div class="ssss"><Icon class="wwww" name="tdesign:close"></Icon></div></Block>
-                        <Block class="g"></Block>
+                        <Block @click="() => {suslic = '/images/suslo.svg' }" class="e"><div class="ssss"><Icon class="wwww" name="tdesign:close"></Icon></div></Block>
+                        <Block @click="() => {suslic = '/images/suskic_in_jacket.svg' }" class="g"><img src="/images/Jacket.svg" alt="" style="height: 37px;"></Block>
                         <Block class="g"></Block>
                         <Block class="g"></Block>
                         <Block class="g"></Block>
@@ -114,12 +115,12 @@ setData('cityId', city, 1 , 'd')
                         <Block class="g"></Block>
                         <Block class="g"></Block>
                     </div>
-                    <div class="tab-area-grid">
+                    <!-- <div class="tab-area-grid">
                         <ButtnoTubChushpan></ButtnoTubChushpan>
                         <ButtnoTubChushpan></ButtnoTubChushpan>
                         <ButtnoTubChushpan></ButtnoTubChushpan>
                         <ButtnoTubChushpan></ButtnoTubChushpan>
-                    </div>
+                    </div> -->
 
 
                 </div>            
@@ -167,9 +168,10 @@ setData('cityId', city, 1 , 'd')
     gap: 16px;
 }
 .g{
-
+    display: flex;
     background-color: #EFEFEF;
-
+    justify-content: center;
+    align-items: center;
     width: 57px;
     aspect-ratio: 1;
 }

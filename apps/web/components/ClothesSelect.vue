@@ -58,7 +58,7 @@ import { ref, computed } from 'vue'
 const props = defineProps({
   placeholder: {
     type: String,
-    default: 'выберите одежду'
+    default: 'одежда'
   },
   clothes: {
     type: Array,

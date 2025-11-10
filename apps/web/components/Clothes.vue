@@ -5,8 +5,8 @@
         <Block class="clothes-area-card">
             <TwelveText><slot>культурный код</slot></TwelveText>
             <div><img src="../public/images/Jacket.svg"></div>
-            <ButtonAction class="hun">
-                100$
+            <ButtonAction :disabled="true" class="hun">
+                куплено
             </ButtonAction>
         </Block>
     </div>
