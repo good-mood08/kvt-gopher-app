@@ -45,7 +45,7 @@ const name = user.value?.username!
             
         </ButtonsShop>
         <Section>
-            город
+            Магазин
             <div class="shop-section">
                 <Clothes />
                 <BlockClothes/>
