@@ -15,7 +15,7 @@ pnpm strapi export --file ./data.json --no-encrypt
 cd apps/cms
 pnpm strapi import --file ./path-to-data-file
 ```
-
+u
 # Turborepo VueJS/NuxtJS starter
 
 This is a community-maintained example. If you experience a problem, please submit a pull request with a fix. GitHub Issues will be closed.
