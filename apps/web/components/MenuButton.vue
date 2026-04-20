@@ -6,49 +6,11 @@ defineProps<{
 </script>
 
 <template>
-    <button class="button" :class="{ 'unread': unread }">
-        <span class="menu-button-icon">
-            <slot name="icon"></slot>
+    <button class="relative inline-flex w-full cursor-pointer flex-col items-center rounded-2xl border-none bg-[#EFEFEF] px-2.5 pb-2.5 pt-3.5 max-sm:rounded-xl max-sm:px-2 max-sm:pb-2 max-sm:pt-2.5">
+        <span class="text-[26px] text-[#333] max-sm:text-[22px]">
+            <slot name="icon" />
         </span>
-        <TwelveText class="menu-button-text">{{ title }}</TwelveText>
-        <span v-if="unread" class="unread-indicator"></span>
+        <TwelveText class="text-center font-medium text-[#333]">{{ title }}</TwelveText>
+        <span v-if="unread" class="absolute right-2 top-2 z-[2] h-2.5 w-2.5 rounded-full bg-[#FF4B4B]"></span>
     </button>
 </template>
-
-<style scoped>
-.button {
-    position: relative;
-    padding: 14px 10px 10px 10px;
-    border-radius: 16px;
-    background-color: #EFEFEF;
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    border: none;
-    width: 100%;
-    cursor: pointer;
-}
-
-.menu-button-icon {
-    font-size: 26px;
-    color: #333;
-}
-
-.menu-button-text {
-    color: #333;
-    font-weight: 500;
-}
-
-.unread-indicator {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 10px;
-    height: 10px;
-    background-color: #FF4B4B;
-    border-radius: 50%;
-    z-index: 2;
-    animation: pulse 2s infinite;
-}
-
-</style>

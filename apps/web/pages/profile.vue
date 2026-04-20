@@ -115,14 +115,6 @@ const suslic = ref('/images/suslo.svg')
                         <Block class="g"></Block>
                         <Block class="g"></Block>
                     </div>
-                    <!-- <div class="tab-area-grid">
-                        <ButtnoTubChushpan></ButtnoTubChushpan>
-                        <ButtnoTubChushpan></ButtnoTubChushpan>
-                        <ButtnoTubChushpan></ButtnoTubChushpan>
-                        <ButtnoTubChushpan></ButtnoTubChushpan>
-                    </div> -->
-
-
                 </div>            
             </div>
                                   <div class="section">

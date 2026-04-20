@@ -91,7 +91,7 @@ const getLetterClass = (letter: string, index: number, guess: string) => {
     </div>
     
     <div v-if="state.gameOver" class="game-message" :class="{ 'win-animation': state.showWinAnimation }">
-      <TwentyText v-if="state.won">Поздравляю! Вы победили! 🎉</TwentyText>
+      <TwentyText v-if="state.won"></TwentyText>
       <TwentyText v-else>Игра окончена! Слово было: {{ props.word.toUpperCase() }}</TwentyText>
     </div>
 

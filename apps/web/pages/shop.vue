@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { getData, setData } from 'nuxt-storage/local-storage';
-import BlockClothes from '~/components/BlockClothes.vue';
-import SelectClothes from '~/components/BlockClothes.vue';
+import { getData } from 'nuxt-storage/local-storage';
 
 const { fetchUser } = useStrapiAuth()
 const user = await fetchUser()
-const { find, findOne } = useStrapi()
+const { findOne } = useStrapi()
 const cities = await findOne('cities',getData('cityId'))
 
 const name = user.value?.username!

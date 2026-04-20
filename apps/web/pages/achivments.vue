@@ -1,6 +1,20 @@
+<script setup lang="ts">
+const { fetchUser } = useStrapiAuth()
+const user = await fetchUser()
+
+const name = computed(() => user.value?.username ?? 'игрок')
+
+const achievements = Array.from({ length: 10 }, (_, index) => ({
+  id: `local-${index + 1}`,
+  title: 'собиратель',
+  description: 'соберите 100 зданий',
+  active: true,
+}))
+</script>
+
 <template >
     <div class="main">
-        <TheHeader :username="name "/>
+        <TheHeader :username="name"/>
         <div class="display">
             <ButtonsAchivments>
                 <template #left>
@@ -37,10 +51,12 @@
 
             <div class="cards" >
                 <Card 
-                    title="собиратель"
-                    description="соберите 100 зданий" 
-                    :active="true"
-                    v-for="i in 10"
+                    v-for="item in achievements"
+                    :key="item.id"
+                    :id="item.id"
+                    :title="item.title"
+                    :description="item.description"
+                    :active="item.active"
                 />
             </div>
       </div>
@@ -65,6 +81,23 @@
     flex-direction: column;
     gap: 16px;
     padding: 0px 20px;
+}
+
+@media (max-width: 1024px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .display {
+    padding: 0 12px;
+    gap: 12px;
+  }
+
+  .main {
+    gap: 12px;
+  }
 }
 
 </style>

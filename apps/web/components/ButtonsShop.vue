@@ -1,32 +1,14 @@
 
 <template>
-    <div class="header">
-        <div class="left">
-            <slot name="left"></slot>
+    <div class="grid grid-cols-3 gap-4 max-sm:grid-cols-1 max-sm:gap-2.5">
+        <div>
+            <slot name="left" />
         </div>
-        <div class="middle">
-            <slot name="middle"></slot>
+        <div>
+            <slot name="middle" />
         </div>
-        <div class="right">
-            <slot name="right"></slot>
+        <div>
+            <slot name="right" />
         </div>
     </div>
 </template>
-
-<style scoped>
-.header {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-areas: "left  middle right";
-    gap: 16px;
-}
-.left {
-    grid-area: left;
-}
-.middle {
-    grid-area: middle;
-}
-.right {
-    grid-area: right;
-}
-</style>

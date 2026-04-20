@@ -71,13 +71,14 @@ if (point.images === null) {
  
  return urls
 }
+const center_map = ref([44.746292, 48.797957]) 
 </script>
 
 <template>
   <yandex-map
     :settings="{
       location: {
-        center: [44.746292,48.797957 ],
+        center: center_map,
         zoom: 15,
       },
     }"
@@ -103,8 +104,9 @@ if (point.images === null) {
       }"
     />
 
-    <Marcer
+    <Marcer 
       v-for="point in props.points.locations"
+      @click="() => {center_map = [  +point.lat, +point.lon,]}"
       :coords="{
         lon: +point.lon,
         lat: +point.lat
@@ -117,7 +119,16 @@ if (point.images === null) {
       :current-image="currentImageIndex"
       :name="point.name"
       :description="point.description"
-      @mouseenter="showPopup"
+      
+      
+      @mouseenter="() => {
+        
+        
+        showPopup()
+        
+        
+
+       } "
       @mouseleave="hidePopup"
       @select="(async () => {
         await navigateTo(`/locationStory/${point.documentId}`)

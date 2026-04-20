@@ -17,7 +17,7 @@ const props = defineProps<{
      */
   active: boolean
 }>()
-const { find, findOne, update } = useStrapi()
+const { update } = useStrapi()
 const IsActive = ref(!props.active)
 async function up() {
     await update('user-achievements',props.id,{ collected:true})
@@ -46,9 +46,6 @@ async function up() {
 
 </template>
 <style scoped>
-.u{
-    width: 100%;
-}
 .card-area-card {
   background: radial-gradient(#FFE586, #FBFBFB);
   background-position: bottom left;
@@ -86,5 +83,17 @@ async function up() {
     align-items: baseline;
     gap: 6px;
     padding: 24px 0px;
+}
+
+@media (max-width: 640px) {
+  .card-area-card {
+    gap: 8px;
+    padding: 16px;
+    align-items: stretch;
+  }
+
+  .card-inf-area {
+    padding: 16px 0;
+  }
 }
 </style>

@@ -1,23 +1,24 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  components:{
+  components: {
     dirs: [
       {
         path: './components',
         pathPrefix: false,
-      }
+      },
     ]
   },
   devtools: { enabled: false },
-  css: ['~/assets/index.css','@/assets/css/fonts.css'],
+  css: ['~/assets/css/tailwind.css', '~/assets/index.css', '@/assets/css/fonts.css'],
   modules: [
     'vue-yandex-maps/nuxt',
     '@nuxtjs/strapi',
     'nuxt-swiper',
-    '@nuxt/icon'
+    '@nuxt/icon',
+    '@nuxt/ui'
   ],
   yandexMaps: {
-    apikey: '4b0f1bee-9061-4bf4-b1e1-6284de405188',
+    apikey: '77133e2c-3046-41d4-ac56-5081854e5875',
   },
   strapi: {
     url: 'http://localhost:1337',

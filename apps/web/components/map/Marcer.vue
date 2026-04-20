@@ -55,7 +55,7 @@ const props = withDefaults(defineProps<MarkerProps>(), {
   images: () => []
 })
 
-const emit = defineEmits(['select'])
+const emit = defineEmits(['select', 'click'])
 
 function is_range(def_range: number) {
   const range = getDistance(
@@ -94,8 +94,9 @@ function stopAutoScroll() {
 const isHovered = ref(false)
 </script>
 
-<template>
+<template >
   <yandex-map-default-marker
+    
     v-model="defaultMarker"
     :settings="{
       coordinates: [props.coords.lat, props.coords.lon],
@@ -145,6 +146,7 @@ const isHovered = ref(false)
       </div>
     </template>
   </yandex-map-default-marker>
+
 </template>
 
 <style scoped>
