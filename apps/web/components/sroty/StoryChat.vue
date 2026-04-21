@@ -3,10 +3,25 @@
     <div v-if="isOpen" class="chat-container">
       <div class="chat-window">
         <div class="chat-header">
-          <TwelveText class="chat-title">Story Chat</TwelveText>
+          <div class="chat-header-side" aria-hidden="true" />
+          <TwelveText class="chat-title">Сюжетный чат</TwelveText>
+          <button
+            type="button"
+            class="header-audio-btn"
+            :class="{ 'is-active': ttsAutoOn || ttsPlaying || ttsLoading }"
+            title="Автоозвучка: следующая реплика появляется после конца фразы. Повторное нажатие — выключить."
+            :aria-label="ttsAutoOn ? 'Выключить автоозвучку' : 'Включить автоозвучку с автопереходом'"
+            @click="onAudioToggle"
+          >
+            <Icon
+              class="header-audio-icon"
+              :class="{ 'animate-spin': ttsLoading }"
+              :name="ttsLoading ? 'material-symbols:progress-activity' : ttsPlaying ? 'material-symbols:stop-circle' : 'material-symbols:volume-up-rounded'"
+            />
+          </button>
         </div>
         
-        <div class="messages-container">
+        <div ref="messagesRoot" class="messages-container">
           <div v-for="(message, index) in visibleMessages" :key="index" class="message-container">
             <ChatMessage
               :author="getAuthor(message.authorId).name"
@@ -21,20 +36,15 @@
         </div>
 
         <div class="next-message-container">
-          <TwentyText v-if="!hasSeenDialog" class="chat-timer">Auto-scroll in: {{ timer }}s</TwentyText>
-          <button 
-            @click="showNextMessage" 
-            :disabled="currentMessageIndex >= storyMessages.length"
+          <TwentyText v-if="footerHint" class="chat-footer-hint">{{ footerHint }}</TwentyText>
+          <div v-else class="chat-footer-spacer" aria-hidden="true" />
+          <button
+            type="button"
             class="next-button"
+            @click="handleNextButtonClick"
+            :disabled="!isFinished && currentMessageIndex >= storyMessages.length"
           >
-            <TwentyText class="button-action-text"><slot>вперёд!</slot></TwentyText>
-          </button>
-          <button 
-            v-if="isFinished"
-            @click="close"  
-            class="next-button"
-          >
-            <TwentyText class="button-action-text"><slot>закрыть</slot></TwentyText>
+            <TwentyText class="button-action-text">{{ isFinished ? 'Закрыть' : 'Дальше' }}</TwentyText>
           </button>
         </div>
       </div>
@@ -108,10 +118,9 @@ const hasSeenDialog = ref(props.hasSeenDialog)
 const isFinished = ref(false)
 
 const visibleMessages = ref([])
-const timer = ref(5)
 const currentMessageIndex = ref(0)
 const selectedImage = ref(null)
-let autoScrollInterval
+const messagesRoot = ref(null)
 
 
 watch(isFinished, async(newValue) => {
@@ -154,16 +163,38 @@ const getAuthor = (authorId) => {
   return authorsList.value.find(author => author.name.toLocaleLowerCase() === authorId.toLocaleLowerCase()) || authorsList.value[0]
 }
 
+/** Только текст для TTS — персонажи различаются голосами (public.ttsYandexVoice*) */
+const buildNarrationScript = (message) => {
+  if (!message?.text?.trim()) return ''
+  return message.text.trim()
+}
+
+const getVoiceForMessage = (message) => {
+  if (!message?.authorId) return undefined
+  const pub = useRuntimeConfig().public
+  const a = String(message.authorId).toLowerCase()
+  const me = String(props.currentUser).toLowerCase()
+  return a === me ? pub.ttsYandexVoicePlayer : pub.ttsYandexVoiceNpc
+}
+
 const storyMessages = computed(() => {
   const storyData = new Function(`return ${props.story.content}`)()
   return storyData.main || []
 })
 
+const footerHint = computed(() => {
+  if (hasSeenDialog.value || isFinished.value) return ''
+  const total = storyMessages.value.length
+  if (total === 0) return ''
+  const shown = visibleMessages.value.length
+  return `Реплика ${shown} из ${total} · нажмите «Дальше», когда будете готовы`
+})
+
 const scrollToBottom = () => {
   nextTick(() => {
-    const container = document.querySelector('.messages-container')
-    if (container) {
-      container.scrollTop = container.scrollHeight
+    const el = messagesRoot.value
+    if (el) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
     }
   })
 }
@@ -173,53 +204,56 @@ const showNextMessage = () => {
     const message = storyMessages.value[currentMessageIndex.value]
     visibleMessages.value.push(message)
     currentMessageIndex.value++
-    timer.value = 5
     scrollToBottom()
-    
+
     if (currentMessageIndex.value >= storyMessages.value.length) {
       isFinished.value = true
       hasSeenDialog.value = true
-      if (autoScrollInterval) {
-        clearInterval(autoScrollInterval)
-      }
     }
   }
 }
 
-const startAutoScroll = () => {
-  if (hasSeenDialog.value) {
-    while (currentMessageIndex.value < storyMessages.value.length) {
-      showNextMessage()
-    }
-    isFinished.value = true
+const {
+  ttsAutoOn,
+  ttsLoading,
+  ttsPlaying,
+  disableTtsAuto,
+  pauseTtsAutoForStoryEnd,
+  beforeManualStoryAdvance,
+  onAudioToggle,
+} = useStoryChatTts({
+  visibleMessages,
+  buildNarrationScript,
+  getVoiceForMessage,
+  onTtsError: (msg) => {
+    alert(typeof msg === 'string' ? msg : 'Не удалось получить озвучку')
+  },
+  getCurrentOptions: () => [],
+  canAdvanceStory: () =>
+    !hasSeenDialog.value
+    && !isFinished.value
+    && currentMessageIndex.value < storyMessages.value.length,
+  advanceStory: () => {
+    showNextMessage()
+  },
+})
+
+watch(isFinished, (v) => {
+  if (v) nextTick(() => pauseTtsAutoForStoryEnd())
+})
+
+const handleNextButtonClick = () => {
+  if (isFinished.value) {
+    close()
     return
   }
-
-  if (autoScrollInterval) {
-    clearInterval(autoScrollInterval)
-  }
-
-  autoScrollInterval = setInterval(() => {
-    if (timer.value > 0) {
-      timer.value--
-    } else {
-      showNextMessage()
-      timer.value = 5
-    }
-    
-    if (currentMessageIndex.value >= storyMessages.value.length) {
-      clearInterval(autoScrollInterval)
-      isFinished.value = true
-      hasSeenDialog.value = true
-    }
-  }, 1000)
+  beforeManualStoryAdvance()
+  showNextMessage()
 }
 
 const close = () => {
+  disableTtsAuto()
   emit('close')
-  if (autoScrollInterval) {
-    clearInterval(autoScrollInterval)
-  }
 }
 
 const openImageModal = (image) => {
@@ -234,14 +268,13 @@ const closeImageModal = () => {
 
 watch(() => props.isOpen, (newValue) => {
   if (newValue) {
+    disableTtsAuto()
     document.body.style.overflow = 'hidden'
     if (!hasSeenDialog.value) {
       visibleMessages.value = []
       currentMessageIndex.value = 0
       isFinished.value = false
-      timer.value = 5
       showNextMessage()
-      startAutoScroll()
     } else {
       if (visibleMessages.value.length === 0) {
         while (currentMessageIndex.value < storyMessages.value.length) {
@@ -251,13 +284,12 @@ watch(() => props.isOpen, (newValue) => {
     }
   } else {
     document.body.style.overflow = 'auto'
+    disableTtsAuto()
   }
 })
 
 onUnmounted(() => {
-  if (autoScrollInterval) {
-    clearInterval(autoScrollInterval)
-  }
+  disableTtsAuto()
   document.body.style.overflow = 'auto'
 })
 </script>
@@ -303,8 +335,8 @@ onUnmounted(() => {
 
 .chat-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
   padding: 1rem;
   border-bottom: 1px solid #e5e7eb;
   background-color: white;
@@ -312,10 +344,50 @@ onUnmounted(() => {
   border-top-right-radius: 1rem;
 }
 
+.chat-header-side {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
 .chat-title {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
   font-size: 1.25rem;
   font-weight: 700;
   color: #1f2937;
+}
+
+.header-audio-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.header-audio-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #111827;
+}
+
+.header-audio-btn.is-active {
+  border-color: rgba(71, 125, 255, 0.45);
+  color: rgba(71, 125, 255, 1);
+}
+
+.header-audio-icon {
+  font-size: 22px;
 }
 
 
@@ -344,6 +416,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.75rem;
   padding: 1rem;
   background-color: white;
   border-top: 1px solid #e5e7eb;
@@ -351,19 +424,35 @@ onUnmounted(() => {
   border-bottom-right-radius: 1rem;
 }
 
-.chat-timer {
-  font-size: 0.875rem;
+.chat-footer-hint {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.6875rem;
+  line-height: 1.3;
   color: #6b7280;
 }
 
+.chat-footer-spacer {
+  flex: 1;
+  min-width: 0;
+}
+
 .next-button {
+  flex-shrink: 0;
   padding: 0.75rem 1.5rem;
   background-color: rgba(71, 125, 255, 1);
   color: white;
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.next-button:hover:not(:disabled) {
+  background-color: rgba(55, 105, 230, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(71, 125, 255, 0.35);
 }
 
 .next-button:disabled {
