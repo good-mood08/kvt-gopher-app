@@ -2,6 +2,8 @@
 import { getDistance } from 'geolib';
 import type { YMapDefaultMarker } from '@yandex/ymaps3-types/packages/markers';
 import { YandexMapDefaultMarker } from 'vue-yandex-maps';
+import { defineComponent } from 'vue';
+import type { PropType } from 'vue';
 
 const defaultMarker = shallowRef<YMapDefaultMarker | null>(null);
 
@@ -9,6 +11,7 @@ const defaultMarker = shallowRef<YMapDefaultMarker | null>(null);
  * Пропсы для маркера
  */
 interface MarkerProps {
+  markerId: string | number
   /**
    * Координаты маркера
    */
@@ -55,7 +58,12 @@ const props = withDefaults(defineProps<MarkerProps>(), {
   images: () => []
 })
 
-const emit = defineEmits(['select', 'click'])
+const emit = defineEmits<{
+  select: []
+  popupOpen: [id: string | number]
+  popupRegisterClose: [payload: { id: string | number, close: () => void }]
+  popupClose: [id: string | number]
+}>()
 
 function is_range(def_range: number) {
   const range = getDistance(
@@ -92,6 +100,55 @@ function stopAutoScroll() {
 }
 
 const isHovered = ref(false)
+const isDebugPopup = import.meta.dev
+const PopupLifecycle = defineComponent({
+  props: {
+    markerId: {
+      type: [String, Number],
+      required: true
+    },
+    closeFn: {
+      type: Function as PropType<() => void>,
+      required: true
+    }
+  },
+  emits: ['registerClose'],
+  setup(lifecycleProps, { emit: lifecycleEmit }) {
+    watch(() => lifecycleProps.closeFn, (closeFn) => {
+      lifecycleEmit('registerClose', { id: lifecycleProps.markerId, close: lifecycleProps.closeFn })
+    }, { immediate: true })
+
+    return () => null
+  }
+})
+
+function handlePopupRegisterClose(payload: { id: string | number, close: () => void }) {
+  if (isDebugPopup) {
+    console.log('[MapPopup][Marker] register close handler', { markerId: payload.id })
+  }
+  emit('popupRegisterClose', payload)
+}
+
+function handlePopupClose(close: () => void) {
+  if (isDebugPopup) {
+    console.log('[MapPopup][Marker] close button click', { markerId: props.markerId })
+  }
+  close()
+  emit('popupClose', props.markerId)
+}
+
+function handleMarkerClick() {
+  const marker = defaultMarker.value as any
+  const isPopupOpen = Boolean(marker?._popupIsOpen)
+
+  if (!isPopupOpen) {
+    marker?._togglePopup?.()
+  }
+
+  if (Boolean(marker?._popupIsOpen)) {
+    emit('popupOpen', props.markerId)
+  }
+}
 </script>
 
 <template >
@@ -101,15 +158,21 @@ const isHovered = ref(false)
     :settings="{
       coordinates: [props.coords.lat, props.coords.lon],
       popup: { position: 'top', hidesMarker: true },
+      onClick: handleMarkerClick
     }"
   >
     <template #popup="{ close }">
+      <PopupLifecycle
+        :marker-id="props.markerId"
+        :close-fn="close"
+        @register-close="handlePopupRegisterClose"
+      />
       <div 
         class="popup"
         @mouseenter="isHovered = true; stopAutoScroll()"
         @mouseleave="isHovered = false; startAutoScroll()"
       >
-        <button class="close-button" @click="close">&times;</button>
+        <button class="close-button" @click="handlePopupClose(close)">&times;</button>
         
         <div v-if="props.images?.length" class="image-container">
           <transition-group name="fade">

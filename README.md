@@ -1,4 +1,6 @@
 # для работы в apps/cms создай .env скопируй туда данный из .env.example
+# для работы в apps/web создай .env скопируй туда данный из .env.example
+
 # pnpm i
 # pnpm run dev
 

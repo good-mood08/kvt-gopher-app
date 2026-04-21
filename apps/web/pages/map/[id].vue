@@ -34,6 +34,7 @@
   const all = mapData.data.locations.length
   const progress = (compled / all)*100
   const isChatOpen = ref(false)
+  const coordsMode = ref<'fixed' | 'geo'>('geo')
   
   const story = await findOne('map-stories', response.value.data.map_story.documentId, {
     populate:{
@@ -88,6 +89,10 @@
   const closeChat = () => {
     isChatOpen.value = false
   }
+
+  const toggleCoordsMode = () => {
+    coordsMode.value = coordsMode.value === 'fixed' ? 'geo' : 'fixed'
+  }
 </script>
 
 <template>
@@ -107,15 +112,20 @@
       <main class="main-content">
         <div class="map-container">
           <div class="map-buttons">
-            <button @click="async () => await navigateTo('/general')" class="round-button ">
-                <Icon style="font-size: 20px;"  name="material-symbols:reply-rounded"/>
-            </button>
+            <div class="map-buttons-left">
+              <button @click="async () => await navigateTo('/general')" class="round-button ">
+                  <Icon style="font-size: 20px;"  name="material-symbols:reply-rounded"/>
+              </button>
+              <button class="mode-button" @click="toggleCoordsMode">
+                {{ coordsMode === 'fixed' ? 'фикс' : 'гео' }}
+              </button>
+            </div>
             <button class="round-button" @click="openChat" >
-                <Icon style="font-size: 20px;" name="material-symbols:chat-rounded"/>
+              <Icon style="font-size: 20px;" name="material-symbols:chat-rounded"/>
             </button>
           </div>
           <div class="map-placeholder">
-            <Map :points="response.data"></Map>
+            <Map :points="response.data" :coords-mode="coordsMode"></Map>
           </div>
         </div>
       </main>
@@ -195,6 +205,11 @@
   z-index: 1;
 }
 
+.map-buttons-left {
+  display: flex;
+  gap: 8px;
+}
+
 .round-button {
   width: 40px;
   height: 40px;
@@ -209,7 +224,25 @@
   transition: all 0.3s ease;
 }
 
+.mode-button {
+  height: 40px;
+  border-radius: 12px;
+  border: none;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  padding: 0 12px;
+  font-family: 'Gothic 60';
+  font-size: 12px;
+  transition: all 0.3s ease;
+}
+
 .round-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.mode-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
@@ -253,6 +286,12 @@
     height: 36px;
     border-radius: 10px;
   }
+
+  .mode-button {
+    height: 36px;
+    border-radius: 10px;
+    padding: 0 10px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -282,6 +321,13 @@
     width: 32px;
     height: 32px;
     border-radius: 8px;
+  }
+
+  .mode-button {
+    height: 32px;
+    border-radius: 8px;
+    padding: 0 8px;
+    font-size: 10px;
   }
 }
 .chat-trigger {

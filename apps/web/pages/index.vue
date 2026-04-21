@@ -13,22 +13,22 @@
 
 <style scoped>
 .container {
-  position: absolute;
-  top: 15vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 .app-container {
   background: #f7fafc;
   display: flex;
   justify-content: center;
-  /* align-items: center; */
+  align-items: center;
   min-height: 100vh;
-  
- 
+  padding: 16px;
 }
 
 @media (max-width: 480px) {
   .app-container {
-    padding: 16px;
+    padding: 12px;
   }
 }
 </style>
