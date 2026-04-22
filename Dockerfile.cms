@@ -2,6 +2,13 @@ FROM node:22-slim
 
 WORKDIR /app/apps/cms
 ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=1337
+ENV APP_KEYS="toBeModified1,toBeModified2"
+ENV API_TOKEN_SALT=tobemodified
+ENV ADMIN_JWT_SECRET=tobemodified
+ENV TRANSFER_TOKEN_SALT=tobemodified
+ENV JWT_SECRET=tobemodified
 
 # Fallback toolchain for native modules (e.g. better-sqlite3) if prebuilt binary is unavailable.
 RUN apt-get update \
@@ -12,6 +19,9 @@ COPY apps/cms/package.json ./
 RUN npm install
 
 COPY apps/cms ./
+
+RUN npm run strapi -- import --file ./data.json.tar.gz \
+  && rm -f ./data.json.tar.gz
 
 RUN npm run build
 

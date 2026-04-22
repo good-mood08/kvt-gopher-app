@@ -17,6 +17,8 @@ pnpm strapi export --file ./data.json --no-encrypt
 cd apps/cms
 pnpm strapi import --file ./path-to-data-file
 ```
+
+Для Docker-режима ручной импорт не нужен: импорт `apps/cms/data.json.tar.gz` выполняется на этапе сборки образа `cms`.
 u
 # Turborepo VueJS/NuxtJS starter
 
