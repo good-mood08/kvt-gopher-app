@@ -60,7 +60,6 @@ gap: 16px;
 }
 .welcome-container {
   padding: clamp(14px, 3vw, 20px);
-  padding: clamp(14px, 3vw, 20px);
   text-align: center;
   background: white;
   border-radius: 16px;
@@ -70,9 +69,6 @@ gap: 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 16px;
-  box-sizing: border-box;
-  margin-inline: auto;
   gap: 16px;
   box-sizing: border-box;
   margin-inline: auto;
@@ -86,7 +82,6 @@ gap: 16px;
 }
 
 @media (max-width: 480px) {
-@media (max-width: 480px) {
   .welcome-container {
     width: 100%;
     max-width: none;
@@ -96,15 +91,10 @@ gap: 16px;
 
   .container-text {
     gap: 14px;
-  .container-text {
-    gap: 14px;
   }
 
   .container-select {
     gap: 12px;
-  .container-select {
-    gap: 12px;
   }
-}
 }
 </style>

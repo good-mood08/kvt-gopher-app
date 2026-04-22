@@ -10,9 +10,10 @@
 
 <style scoped>
 .container {
-  width: 100%;
+  width: min(100%, 420px);
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
 .app-container {
@@ -20,13 +21,14 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  padding: 16px;
+  min-height: 100dvh;
+  padding: clamp(12px, 3vw, 24px);
+  box-sizing: border-box;
 }
 
 @media (max-width: 480px) {
   .app-container {
-    padding: 12px;
+    min-height: 100svh;
   }
 }
 </style>
