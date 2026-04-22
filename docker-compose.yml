@@ -8,7 +8,6 @@ services:
     ports:
       - "1337:1337"
     volumes:
-      - cms-data:/app/apps/cms/.tmp
       - cms-uploads:/app/apps/cms/public/uploads
 
   web:
@@ -23,5 +22,4 @@ services:
       - "3000:3000"
 
 volumes:
-  cms-data:
   cms-uploads:
