@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getData, setData } from 'nuxt-storage/local-storage';
+import { getData, setData } from '~/composables/useLocalStore'
 
 const { find, findOne } = useStrapi()
 const cities = await find('cities')

@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import { getData, setData } from 'nuxt-storage/local-storage';
+import { setData } from '~/composables/useLocalStore'
 const { getProviderAuthenticationUrl } = useStrapiAuth()
 
 const handleGoogleLogin = () => {
   window.location.href = getProviderAuthenticationUrl(`google/`)
 }
-const { find, findOne } = useStrapi()
-const cities = await find('cities')
+const { find } = useStrapi()
+const cities = ref<any[]>([])
+const hasSelection = ref(false)
 
+try {
+  const response = await find('cities')
+  cities.value = Array.isArray((response as any)?.data) ? (response as any).data : []
+} catch (error) {
+  console.error('Не удалось загрузить список городов:', error)
+}
 
- const hasSelection = ref(false)
 const handleCitySelected = ({ city }) => {
 setData('cityId', city, 1 , 'd')
 }
@@ -25,7 +31,7 @@ setData('cityId', city, 1 , 'd')
     <div class="container-select">
         <div class="select-container">
         <CitySelect 
-          :cities="cities.data"
+          :cities="cities"
           v-model:hasSelection="hasSelection"
           @citySelected="handleCitySelected"
         />
@@ -53,15 +59,23 @@ gap: 16px;
   gap: 20px;
 }
 .welcome-container {
-  padding: 16px;
+  padding: clamp(14px, 3vw, 20px);
+  padding: clamp(14px, 3vw, 20px);
   text-align: center;
   background: white;
   border-radius: 16px;
-  width: 322px;
-  aspect-ratio: 1;
+  width: 100%;
+  max-width: 380px;
+  min-height: 300px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 16px;
+  box-sizing: border-box;
+  margin-inline: auto;
+  gap: 16px;
+  box-sizing: border-box;
+  margin-inline: auto;
 }
 
 
@@ -71,21 +85,26 @@ gap: 16px;
   width: 100%;
 }
 
-/* @media (max-width: 480px) {
+@media (max-width: 480px) {
+@media (max-width: 480px) {
   .welcome-container {
-    padding: 20px;
-    margin: 0;
-    border-radius: 8px;
+    width: 100%;
+    max-width: none;
+    min-height: auto;
+    border-radius: 12px;
   }
 
-  .welcome-title {
-    font-size: 20px;
-    margin-bottom: 20px;
+  .container-text {
+    gap: 14px;
+  .container-text {
+    gap: 14px;
   }
 
-  .welcome-text {
-    font-size: 14px;
-    margin-bottom: 20px;
+  .container-select {
+    gap: 12px;
+  .container-select {
+    gap: 12px;
   }
-} */
+}
+}
 </style>

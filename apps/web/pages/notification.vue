@@ -10,7 +10,7 @@
     </div>
   </template>
   <script setup lang="ts">
-  import { getData, setData } from 'nuxt-storage/local-storage';
+  import { getData, setData } from '~/composables/useLocalStore'
   const { find, create, findOne } = useStrapi()
   const {  fetchUser } = useStrapiAuth()
   const user = await fetchUser()
