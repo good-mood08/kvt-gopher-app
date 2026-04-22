@@ -1,8 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 const strapiUrl = process.env.NUXT_PUBLIC_STRAPI_URL || ''
 
-const strapiUrl = process.env.NUXT_PUBLIC_STRAPI_URL || ''
-
 export default defineNuxtConfig({
   compatibilityDate: '2026-04-22',
   compatibilityDate: '2026-04-22',
