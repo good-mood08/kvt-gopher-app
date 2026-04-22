@@ -5,6 +5,7 @@
 </script>
 
 <template>
+  <NuxtPwaManifest />
   <NuxtPage />
 
   

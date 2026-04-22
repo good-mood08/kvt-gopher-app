@@ -22,10 +22,10 @@
     "vue-router": "^4.3.0"
   },
   "dependencies": {
-    "@elevenlabs/elevenlabs-js": "^2.44.0",
     "@nuxt/icon": "^1.12.0",
     "@nuxt/ui": "^3.3.7",
     "@nuxtjs/strapi": "^2.0.0",
+    "@vite-pwa/nuxt": "^1.1.1",
     "@yandex/ymaps3-types": "^1.0.16452936",
     "date-fns": "^4.1.0",
     "geolib": "^3.3.4",

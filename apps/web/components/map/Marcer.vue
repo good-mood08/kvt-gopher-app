@@ -179,7 +179,7 @@ function handleMarkerClick() {
             <img 
               v-for="(image, index) in props.images" 
               :key="index"
-              :src="`http://localhost:1337${image}`" 
+              :src="useCmsMedia(image)" 
               v-show="currentImageIndex === index"
               alt="Location image"
               class="location-image"

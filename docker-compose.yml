@@ -1,0 +1,27 @@
+services:
+  cms:
+    build:
+      context: .
+      dockerfile: Dockerfile.cms
+    env_file:
+      - ./apps/cms/.env
+    ports:
+      - "1337:1337"
+    volumes:
+      - cms-data:/app/apps/cms/.tmp
+      - cms-uploads:/app/apps/cms/public/uploads
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    depends_on:
+      - cms
+    env_file:
+      - ./apps/web/.env
+    ports:
+      - "3000:3000"
+
+volumes:
+  cms-data:
+  cms-uploads:

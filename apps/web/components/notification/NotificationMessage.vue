@@ -7,7 +7,7 @@
     <div class="message-content" :class="priority">
       <div class="message-header">
         <div class="message-icon" :class="type">
-          <img :src="`http://localhost:1337${iconUrl.url}`" :alt="type" />
+          <img :src="iconSrc" :alt="type" />
         </div>
         <div class="message-meta">
           <span class="message-category"><TwentyText>{{ translateCategory(category) }}</TwentyText></span>
@@ -101,12 +101,18 @@ const props = defineProps({
    * url картинки уведомления
    */
   iconUrl: {
-    type: String,
-    required: true
-  }
-});
+    type: [String, Object],
+    required: true,
+  },
+})
 
+function iconUrlToPath(icon: unknown): string {
+  if (typeof icon === 'string') return icon
+  if (icon && typeof icon === 'object' && 'url' in icon) return String((icon as { url: string }).url)
+  return ''
+}
 
+const iconSrc = computed(() => useCmsMedia(iconUrlToPath(props.iconUrl)))
 
 
 const isDetailsOpen = ref(false);

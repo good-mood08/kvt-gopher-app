@@ -114,8 +114,8 @@ const messagesRoot = ref(null)
 
 
 const authorsList = story.data.speakers.map((speaker) => ({
-    name:speaker.name,
-    avatar:`http://localhost:1337${speaker.avatar.url}`
+    name: speaker.name,
+    avatar: useCmsMedia(speaker.avatar?.url),
   }))
 
 const getAuthor = (authorId) => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getData } from 'nuxt-storage/local-storage';
+import { getData } from '~/composables/useLocalStore'
 
 const { fetchUser } = useStrapiAuth()
 const user = await fetchUser()

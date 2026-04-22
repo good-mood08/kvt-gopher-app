@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import { getData, setData } from 'nuxt-storage/local-storage';
+import { setData } from '~/composables/useLocalStore'
 const { getProviderAuthenticationUrl } = useStrapiAuth()
 
 const handleGoogleLogin = () => {
   window.location.href = getProviderAuthenticationUrl(`google/`)
 }
-const { find, findOne } = useStrapi()
-const cities = await find('cities')
+const { find } = useStrapi()
+const cities = ref<any[]>([])
+const hasSelection = ref(false)
 
+try {
+  const response = await find('cities')
+  cities.value = Array.isArray((response as any)?.data) ? (response as any).data : []
+} catch (error) {
+  console.error('Не удалось загрузить список городов:', error)
+}
 
- const hasSelection = ref(false)
 const handleCitySelected = ({ city }) => {
 setData('cityId', city, 1 , 'd')
 }
@@ -25,7 +31,7 @@ setData('cityId', city, 1 , 'd')
     <div class="container-select">
         <div class="select-container">
         <CitySelect 
-          :cities="cities.data"
+          :cities="cities"
           v-model:hasSelection="hasSelection"
           @citySelected="handleCitySelected"
         />
@@ -57,8 +63,8 @@ gap: 16px;
   text-align: center;
   background: white;
   border-radius: 16px;
-  width: min(100%, 360px);
-  max-width: calc(100vw - 32px);
+  width: 100%;
+  max-width: 380px;
   min-height: 300px;
   display: flex;
   flex-direction: column;
@@ -78,7 +84,7 @@ gap: 16px;
 @media (max-width: 480px) {
   .welcome-container {
     width: 100%;
-    max-width: calc(100vw - 24px);
+    max-width: none;
     min-height: auto;
     border-radius: 12px;
   }
