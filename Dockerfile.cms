@@ -20,7 +20,7 @@ RUN npm install
 
 COPY apps/cms ./
 
-RUN npm run strapi -- import --file ./data.json.tar.gz \
+RUN printf "y\n" | npm run strapi -- import --file ./data.json.tar.gz \
   && rm -f ./data.json.tar.gz
 
 RUN npm run build
