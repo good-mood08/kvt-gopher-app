@@ -30,6 +30,7 @@
     "@yandex/ymaps3-types": "^1.0.19345674",
     "date-fns": "^4.1.0",
     "geolib": "^3.3.4",
+    "lucide-vue-next": "^1.0.0",
     "nuxt": "^3.16.2",
     "nuxt-storage": "^1.2.2",
     "nuxt-swiper": "^1.2.2",

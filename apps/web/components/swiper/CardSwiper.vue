@@ -33,19 +33,23 @@ onMounted(async () => {
   }
 })
 
-const slidesPerView = ref(3)
-const spaceBetween = ref(30)
+const slidesPerView = ref<'auto' | number>('auto')
+const spaceBetween = ref(26)
+const slidesOffsetAfter = ref(96)
 
 const updateSlidesPerView = () => {
   if (window.innerWidth < 768) {
-    slidesPerView.value = 1.2
-    spaceBetween.value = 20
+    slidesPerView.value = 'auto'
+    spaceBetween.value = 24
+    slidesOffsetAfter.value = 90
   } else if (window.innerWidth < 1024) {
-    slidesPerView.value = 2.2
-    spaceBetween.value = 25
+    slidesPerView.value = 'auto'
+    spaceBetween.value = 26
+    slidesOffsetAfter.value = 98
   } else {
-    slidesPerView.value = 3.2
-    spaceBetween.value = 30
+    slidesPerView.value = 'auto'
+    spaceBetween.value = 28
+    slidesOffsetAfter.value = 112
   }
 }
 
@@ -70,13 +74,15 @@ const onSwiper = (swiper: any) => {
         :modules="[Autoplay]"
         :slides-per-view="slidesPerView"
         :space-between="spaceBetween"
+        :slides-offset-after="slidesOffsetAfter"
         :loop="true"
         :grab-cursor="true"
-        :centered-slides="true"
-        :initial-slide="1"
+        :centered-slides="false"
+        :initial-slide="0"
+        class="plot-swiper"
         @swiper="onSwiper"
       >
-        <swiper-slide v-for="map in city.data.maps" :key="map.id" class="swiper-slide">
+        <swiper-slide v-for="map in city.data.maps" :key="map.id" class="plot-slide">
           <Plots 
             :id="map.documentId"
             :title="map.name"
@@ -91,43 +97,52 @@ const onSwiper = (swiper: any) => {
 
 <style scoped>
 .swiper-wrapper {
-    overflow: hidden;
+    overflow: visible;
     width: 100%;
 }
 
 .swiper-container {
-  width: 100vw;
-  overflow: hidden;
-
+  width: 100%;
+  overflow: visible;
 }
 
-.swiper {
+.plot-swiper {
   overflow: visible;
   width: 100%;
   position: relative;
 }
 
-.swiper-slide {
-  transition: all 0.3s ease;
-  opacity: 0.7;
-  transform: scale(0.95);
+.plot-slide {
+  width: min(320px, calc(100% - 8px)) !important;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  transform: scale(0.94);
+  transform-origin: left center;
+  opacity: 0.56;
+  position: relative;
+  z-index: 1;
 }
 
-.swiper-slide-active {
+.plot-slide.swiper-slide-active {
   opacity: 1;
   transform: scale(1);
+  z-index: 3;
+}
+
+.plot-slide.swiper-slide-next,
+.plot-slide.swiper-slide-prev {
+  opacity: 0.78;
+  transform: scale(0.97);
+  z-index: 2;
 }
 
 @media (max-width: 768px) {
-  
-  
-  .swiper {
-    padding: 0px 16px;
-    overflow: hidden;
+  .plot-swiper {
+    padding: 0;
+    overflow: visible;
   }
   
-  .swiper-slide {
-    transform: scale(0.9);
+  .plot-slide {
+    width: min(304px, calc(100% - 10px)) !important;
   }
 }
 </style>
