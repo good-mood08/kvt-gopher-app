@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import TenText from './text/TenText.vue';
-import TwentyText from './text/TwentyText.vue';
-
 defineProps<{
     /**
      * имя пользователя
@@ -11,59 +8,144 @@ defineProps<{
 
 </script>
 <template>
-    <div>
-        <Block class="header" @click="console.log('d')">
+    <div class="header-shell">
+        <div class="header">
+            <div class="header-content">
                 <div class="img">
-                    <img src="../public/images/Semen.png" alt="Profile avatar">
+                    <img src="/images/Semen.png" alt="Profile avatar">
                 </div>
 
-                <div class="text">
-                    <TwentyText>{{username}}</TwentyText>
-                    <TenText class="grey">0 exp</TenText>                
-                </div>    
-        </Block>
+                <p class="name">{{ username }}</p>
+                <p class="exp">0 EXP</p>
+                <button class="help-mark" type="button" aria-label="Справка">?</button>
+            </div>
+        </div>
     </div>
 </template>
 <style scoped>
-.text{
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+.header-shell {
+    width: 100%;
+    min-height: 96px;
+    position: relative;
+    z-index: 20;
 }
-.header{ 
-    padding: 50px 10px 10px 10px;
-    border-radius: 0;
-    border-bottom-left-radius: 16px;
-    border-bottom-right-radius: 16px;
-    background-color: #EFEFEF;
+
+.header{
+    position: relative;
+    padding: 14px 18px 10px;
+    background-color: #DCDCDD;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 12px;
     border: none;
     width: 100%;
-    cursor: pointer;
-    flex-direction: row;
-
+    border-radius: 0;
+    min-height: 96px;
 }
 
-.grey{
-    color: grey;
-    opacity: 50%;
+.header-content {
+    display: grid;
+    grid-template-columns: 52px auto;
+    grid-template-rows: auto auto;
+    column-gap: 14px;
+    row-gap: 0;
+    align-items: center;
+    width: max-content;
 }
+
 .img{
+    grid-column: 1;
+    grid-row: 1 / 3;
     border-radius: 50%;
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
     overflow: hidden;
-    border: 1px solid #ffffff8c;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ffffffcc;
+    background: #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     flex-shrink: 0;
 }
+
 .img img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.name {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+    font-family: 'Gothic 60';
+    font-size: 22px;
+    line-height: 1;
+    color: #131313;
+}
+
+.exp {
+    grid-column: 2;
+    grid-row: 2;
+    margin: -2px 0 0;
+    font-family: 'Gothic 60';
+    font-size: 13px;
+    line-height: 0.92;
+    color: #8c8c8c;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.help-mark {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    width: 35px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid #dddddd;
+    background: #f0f0f0;
+    color: #d53c3c;
+    font-family: 'Gothic 60';
+    font-size: 24px;
+    line-height: 0.95;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    transform: translateY(-50%);
+    cursor: default;
+}
+
+@media (max-width: 480px) {
+    .header {
+        padding: 12px 16px 9px;
+        min-height: 90px;
+    }
+
+    .header-content {
+        grid-template-columns: 48px auto;
+        column-gap: 12px;
+    }
+
+    .img {
+        width: 48px;
+        height: 48px;
+    }
+
+    .name {
+        font-size: 20px;
+    }
+
+    .exp {
+        font-size: 12px;
+    }
+
+    .help-mark {
+        width: 35px;
+        height: 34px;
+        font-size: 24px;
+        right: 10px;
+        top: 50%;
+    }
 }
 
 </style>
