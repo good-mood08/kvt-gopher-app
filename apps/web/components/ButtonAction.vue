@@ -24,7 +24,7 @@ const props = defineProps({
 .button {
   padding: 12px 48px;
   border-radius: 8px;
-  background-color: rgba(71, 125, 255, 1);
+  background-color: rgba(79, 125, 255, 1);
   display: inline-flex;
   justify-content: center;
   border: none;

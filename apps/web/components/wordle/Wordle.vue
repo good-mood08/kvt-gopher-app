@@ -52,13 +52,13 @@ const props = defineProps<{
   }
   
   .word-input:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  border-color: #4f7dff;
+  box-shadow: 0 0 0 2px rgba(79, 125, 255, 0.2);
   }
   
   .start-button {
     padding: 0.5rem 1.5rem;
-    background-color: #3b82f6;
+  background-color: #4f7dff;
     color: white;
     border-radius: 0.5rem;
     font-weight: 600;
@@ -67,11 +67,11 @@ const props = defineProps<{
   }
   
   .start-button:hover:not(:disabled) {
-    background-color: #2563eb;
+  background-color: #3f6df0;
   }
   
   .start-button:focus {
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 4px rgba(79, 125, 255, 0.2);
   }
   
   .start-button:disabled {

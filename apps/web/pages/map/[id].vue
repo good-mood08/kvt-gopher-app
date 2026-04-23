@@ -16,8 +16,6 @@
       map_story:true
     }
   })
-  console.log(response.value.data);
-  
   const user = await fetchUser()
   const userId = user.value?.documentId
 
@@ -27,12 +25,20 @@
     filters: {
       users_permissions_user: { documentId: userId },
       location: { map: { documentId: MapId } }
-    }
+    },
+    populate: {
+      location: {
+        fields: ['documentId']
+      }
+    },
   })
 
   const compled = progresses.data.length
   const all = mapData.data.locations.length
   const progress = (compled / all)*100
+  const completedLocationIds = progresses.data
+    .map(item => item.location?.documentId)
+    .filter((id): id is string => typeof id === 'string' && id.length > 0)
   const isChatOpen = ref(false)
   const coordsMode = ref<'fixed' | 'geo'>('geo')
   
@@ -65,9 +71,6 @@
     })
     
     if (existing?.data?.length > 0) {
-      console.log(existing.data);
-      
-      console.log('Вы уже проходили эту локацию')
       return true
     }else{
       
@@ -125,7 +128,12 @@
             </button>
           </div>
           <div class="map-placeholder">
-            <Map :points="response.data" :coords-mode="coordsMode"></Map>
+            <ClientOnly>
+              <Map :points="response.data" :coords-mode="coordsMode" :completed-location-ids="completedLocationIds" />
+              <template #fallback>
+                <div class="map-loading">Загрузка карты...</div>
+              </template>
+            </ClientOnly>
           </div>
         </div>
       </main>
@@ -258,6 +266,11 @@
   font-size: 1.5rem;
 }
 
+.map-loading {
+  font-size: 1rem;
+  color: #64748b;
+}
+
 @media (max-width: 768px) {
   .header {
     padding: 0.75rem;
@@ -335,7 +348,7 @@
     bottom: 2rem;
     right: 2rem;
     padding: 1rem 2rem;
-    background-color: rgba(71, 125, 255, 1);
+    background-color: rgba(79, 125, 255, 1);
     color: white;
     border: none;
     border-radius: 0.5rem;
@@ -346,7 +359,7 @@
   
   .chat-trigger:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 6px rgba(79, 125, 255, 0.3);
   }
   
   @media (max-width: 640px) {

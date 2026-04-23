@@ -268,7 +268,10 @@ onUnmounted(() => {
 
 .chat-container {
   height: 100vh;
-  /* background-color: #f3f4f6; */
+  background:
+    radial-gradient(80% 60% at 15% 10%, rgba(96, 165, 250, 0.2), transparent 60%),
+    radial-gradient(70% 50% at 90% 95%, rgba(99, 102, 241, 0.18), transparent 60%),
+    linear-gradient(180deg, #f3f6ff 0%, #edf2ff 100%);
   padding: 1rem;
   display: flex;
   align-items: center;
@@ -280,8 +283,10 @@ onUnmounted(() => {
   max-width: 42rem;
   width: 100%;
   height: calc(100vh - 2rem);
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 255, 0.95));
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
   padding: 1.5rem;
   animation: windowAppear 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -306,7 +311,7 @@ onUnmounted(() => {
   gap: 0.5rem;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
   animation: slideDown 0.5s ease-out;
 }
 
@@ -348,8 +353,8 @@ onUnmounted(() => {
 }
 
 .header-audio-btn.is-active {
-  border-color: rgba(71, 125, 255, 0.45);
-  color: rgba(71, 125, 255, 1);
+  border-color: rgba(79, 125, 255, 0.45);
+  color: rgba(79, 125, 255, 1);
 }
 
 .header-audio-icon {
@@ -369,6 +374,11 @@ onUnmounted(() => {
   margin: -0.5rem;
   padding: 0.5rem;
   scroll-behavior: smooth;
+  border-radius: 0.75rem;
+  background:
+    radial-gradient(45rem 16rem at -10% -10%, rgba(147, 197, 253, 0.18), transparent 60%),
+    radial-gradient(45rem 16rem at 110% 110%, rgba(196, 181, 253, 0.15), transparent 60%),
+    rgba(248, 250, 255, 0.55);
 }
 
 .messages-container::-webkit-scrollbar {
@@ -425,8 +435,8 @@ onUnmounted(() => {
   width: 100%;
   padding: 0.75rem;
   text-align: left;
-  background-color: #f3f4f6;
-  border: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.9));
+  border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 0.5rem;
   margin-bottom: 0.5rem;
   cursor: pointer;
@@ -435,9 +445,9 @@ onUnmounted(() => {
 }
 
 .option-button:hover {
-  background-color: #e5e7eb;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(236, 242, 255, 1));
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
 }
 
 .next-message-container {
@@ -461,7 +471,7 @@ onUnmounted(() => {
 .next-button {
   flex-shrink: 0;
   padding: 0.65rem 1.25rem;
-  background-color: rgba(71, 125, 255, 1);
+  background: linear-gradient(135deg, rgba(79, 125, 255, 1), rgba(99, 102, 241, 1));
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -471,8 +481,8 @@ onUnmounted(() => {
 }
 
 .next-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 12px 24px rgba(79, 125, 255, 0.3);
 }
 
 .next-button:disabled {

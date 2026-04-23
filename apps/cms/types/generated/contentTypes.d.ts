@@ -444,6 +444,7 @@ export interface ApiGameGame extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    data: Schema.Attribute.JSON;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::game.game'> &
       Schema.Attribute.Private;
@@ -453,7 +454,6 @@ export interface ApiGameGame extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    word: Schema.Attribute.String;
   };
 }
 
@@ -676,7 +676,7 @@ export interface ApiSpeakerSpeaker extends Struct.CollectionTypeSchema {
     >;
     name: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
-    story: Schema.Attribute.Relation<'manyToOne', 'api::story.story'>;
+    stories: Schema.Attribute.Relation<'manyToMany', 'api::story.story'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -706,7 +706,7 @@ export interface ApiStoryStory extends Struct.CollectionTypeSchema {
     name: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     speaker: Schema.Attribute.Relation<'oneToOne', 'api::speaker.speaker'>;
-    speakers: Schema.Attribute.Relation<'oneToMany', 'api::speaker.speaker'>;
+    speakers: Schema.Attribute.Relation<'manyToMany', 'api::speaker.speaker'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

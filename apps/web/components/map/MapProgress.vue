@@ -46,7 +46,7 @@ onMounted(() => {
 }
 
 .ProgressIndicator {
-  background-color: rgba(71, 125, 255, 1);
+  background-color: rgba(79, 125, 255, 1);
   width: 100%;
   height: 100%;
   border-radius: 50px;

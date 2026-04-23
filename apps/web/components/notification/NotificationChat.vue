@@ -302,8 +302,8 @@ watch(() => sortedNotifications.value.length, () => {
 }
 
 .select-trigger:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border-color: #4f7dff;
+  box-shadow: 0 0 0 2px rgba(79, 125, 255, 0.1);
 }
 
 .select-content {

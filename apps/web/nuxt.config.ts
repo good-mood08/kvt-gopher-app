@@ -57,9 +57,13 @@ export default defineNuxtConfig({
       enabled: true,
     },
   },
-  yandexMaps: {
+  yandexMaps: ({
     apikey: '77133e2c-3046-41d4-ac56-5081854e5875',
-  },
+    cdnLibraryLoading: {
+      // Replace implicit @latest with fixed version to avoid dynamic CDN URL.
+      extendLibraries: ['@yandex/ymaps3-default-ui-theme@0.0.24'],
+    },
+  } as any),
   strapi: {
     url: strapiUrl,
     auth: {
