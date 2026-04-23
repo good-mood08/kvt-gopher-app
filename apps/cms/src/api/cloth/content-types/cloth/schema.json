@@ -1,0 +1,52 @@
+{
+  "kind": "collectionType",
+  "collectionName": "cloths",
+  "info": {
+    "singularName": "cloth",
+    "pluralName": "cloths",
+    "displayName": "cloth",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "data": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "sislik": {
+      "type": "media",
+      "multiple": true,
+      "required": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "price": {
+      "type": "biginteger"
+    },
+    "description": {
+      "type": "text"
+    },
+    "cloth_users": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::cloth-user.cloth-user",
+      "mappedBy": "cloth"
+    }
+  }
+}

@@ -6,6 +6,50 @@ const { fetchUser,logout } = useStrapiAuth()
 const user = await fetchUser()
 const { find, findOne } = useStrapi()
 const userId = user.value?.documentId
+
+const FALLBACK_SUSLIK = '/images/suslo.svg'
+
+const ownedCloths = ref<Array<{
+  documentId: string
+  dataUrl: string
+  sislikUrl: string
+}>>([])
+
+if (userId) {
+  const clothUsersRes = await find('cloth-users', {
+    filters: {
+      users_permissions_user: { documentId: { $eq: userId } },
+    },
+    populate: {
+      cloth: { populate: { data: true, sislik: true } },
+    },
+  })
+  const byId = new Map<string, { documentId: string, dataUrl: string, sislikUrl: string }>()
+  for (const row of clothUsersRes?.data ?? []) {
+    const cloth = row.cloth as Record<string, unknown> | undefined
+    if (!cloth?.documentId) continue
+    const id = String(cloth.documentId)
+    if (byId.has(id)) continue
+    const sislikUrl = useStrapiMediaUrlFirst(cloth.sislik)
+    const dataUrl = useStrapiMediaUrl(cloth.data)
+    byId.set(id, {
+      documentId: id,
+      dataUrl: dataUrl || '/images/Jacket.svg',
+      sislikUrl: sislikUrl || dataUrl || FALLBACK_SUSLIK,
+    })
+  }
+  ownedCloths.value = [...byId.values()]
+}
+
+const suslic = ref(FALLBACK_SUSLIK)
+
+function equipCloth(sislikUrl: string) {
+  suslic.value = sislikUrl || FALLBACK_SUSLIK
+}
+
+function unequip() {
+  suslic.value = FALLBACK_SUSLIK
+}
 const maps = await find('maps',{
     populate:'*'
 })
@@ -192,7 +236,7 @@ const isWardrobeSlotActive = (slot: WardrobeSlot) =>
                 выход из профиля
             </ButtonAction>
         </div>
-        <BottomNav />
+        <FooterNav />
     </div>
 </template>
 

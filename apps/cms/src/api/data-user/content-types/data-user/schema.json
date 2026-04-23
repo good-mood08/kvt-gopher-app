@@ -1,0 +1,28 @@
+{
+  "kind": "collectionType",
+  "collectionName": "data_users",
+  "info": {
+    "singularName": "data-user",
+    "pluralName": "data-users",
+    "displayName": "data user",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "exp": {
+      "type": "biginteger"
+    },
+    "cloth_user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::cloth-user.cloth-user"
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}
