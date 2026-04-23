@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "cloth_users",
+  "info": {
+    "singularName": "cloth-user",
+    "pluralName": "cloth-users",
+    "displayName": "cloth user",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "cloth": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::cloth.cloth",
+      "inversedBy": "cloth_users"
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "cloth_users"
+    }
+  }
+}

@@ -21,60 +21,23 @@ await refreshSelectedCity()
 
 const name = user.value?.username!
 const isNewMassege = ref(false)
-const route = useRoute()
-const activeTab = ref('телефон')
-const bottomNavRef = ref<HTMLElement | null>(null)
-const contentBottomPadding = ref('12px')
+const headerRef = ref<HTMLElement | null>(null)
+const headerHeight = ref(0)
+const contentBottomPadding = ref('104px')
 
-let navResizeObserver: ResizeObserver | null = null
+let headerResizeObserver: ResizeObserver | null = null
 
-const getTabByPath = (path: string) => {
-  if (path.startsWith('/shop')) {
-    return 'магазин'
-  }
-  if (path.startsWith('/rating')) {
-    return 'рейтинг'
-  }
-  if (path.startsWith('/profile')) {
-    return 'настройки'
-  }
-  return 'телефон'
-}
-
-watch(
-  () => route.path,
-  (path) => {
-    activeTab.value = getTabByPath(path)
-
-    if (path.startsWith('/general')) {
-      void refreshSelectedCity()
-    }
-  },
-  { immediate: true }
-)
-
-const onTabClick = async (tab: string, path: string) => {
-  activeTab.value = tab
-  await navigateTo(path)
+const updateHeaderHeight = () => {
+  headerHeight.value = headerRef.value?.offsetHeight ?? 0
 }
 
 const updateContentBottomPadding = () => {
-  if (!bottomNavRef.value) {
-    return
-  }
-
-  const parsedBottom = Number.parseFloat(getComputedStyle(bottomNavRef.value).bottom || '0')
-  const computedBottom = Number.isFinite(parsedBottom) ? parsedBottom : 0
-
   if (window.innerWidth < 1024) {
-    const compactBottomPadding = 0
-    contentBottomPadding.value = `${Math.ceil(computedBottom + compactBottomPadding)}px`
+    contentBottomPadding.value = '104px'
     return
   }
 
-  const navHeight = bottomNavRef.value.offsetHeight
-  const extraGap = 12
-  contentBottomPadding.value = `${Math.ceil(navHeight + computedBottom + extraGap)}px`
+  contentBottomPadding.value = '126px'
 }
 
 onMounted(async()=>{
@@ -136,21 +99,24 @@ onMounted(async()=>{
 })
 
 onMounted(() => {
+  updateHeaderHeight()
   updateContentBottomPadding()
 
-  navResizeObserver = new ResizeObserver(() => {
-    updateContentBottomPadding()
+  headerResizeObserver = new ResizeObserver(() => {
+    updateHeaderHeight()
   })
 
-  if (bottomNavRef.value) {
-    navResizeObserver.observe(bottomNavRef.value)
+  if (headerRef.value) {
+    headerResizeObserver.observe(headerRef.value)
   }
 
+  window.addEventListener('resize', updateHeaderHeight)
   window.addEventListener('resize', updateContentBottomPadding)
 })
 
 onBeforeUnmount(() => {
-  navResizeObserver?.disconnect()
+  headerResizeObserver?.disconnect()
+  window.removeEventListener('resize', updateHeaderHeight)
   window.removeEventListener('resize', updateContentBottomPadding)
 })
 
@@ -163,8 +129,10 @@ onActivated(() => {
 <template >
 
  
-    <div class="main">
-        <TheHeader :username="name "  @click="async() => await navigateTo('/profile')"/>
+    <div class="main" :style="{ '--header-offset': `${headerHeight}px` }">
+        <div ref="headerRef">
+          <TheHeader :username="name "  @click="async() => await navigateTo('/profile')"/>
+        </div>
         <div class="display" :style="{ paddingBottom: contentBottomPadding }">
         <div class="right-ornaments" aria-hidden="true">
           <span class="right-ornaments__line right-ornaments__line--outer"></span>
@@ -172,9 +140,7 @@ onActivated(() => {
 
           <div class="right-triangle right-triangle--top">
             <div class="right-triangle__base"></div>
-            <div class="right-triangle__stroke"></div>
-            <div class="right-triangle__suslik"></div>
-            <span class="right-triangle__city-name">{{ cities?.data?.name }}</span>
+            <div class="right-triangle__gradient right-triangle__gradient--top"></div>
           </div>
 
           <div class="right-triangle right-triangle--middle">
@@ -207,99 +173,25 @@ onActivated(() => {
 
       </div>
 
-      <nav ref="bottomNavRef" class="fixed inset-x-0 bottom-[env(safe-area-inset-bottom)] z-40 flex justify-center px-0 pb-0 md:bottom-6 md:px-4 md:pb-0">
-        <div class="w-full max-w-none min-h-[70px] rounded-none bg-[#EAEAEA] px-6 pb-2 pt-2 shadow-[0_-10px_30px_rgba(0,0,0,0.14)] md:max-w-[760px] md:min-h-[80px] md:rounded-[30px] md:px-7 md:py-4">
-          <ul class="grid h-full grid-cols-4 items-center gap-3 md:h-full md:items-center md:gap-5">
-            <li>
-              <button
-                @click="onTabClick('телефон', '/notification')"
-                class="relative flex w-full flex-col items-center justify-center px-1.5 py-1.5 md:py-2"
-              >
-                <Smartphone
-                  :stroke-width="1.7"
-                  class="h-[28px] w-[28px]"
-                  :class="activeTab === 'телефон' ? 'stroke-[#D33030]' : 'stroke-black'"
-                />
-                <span
-                  class="px-2 py-0.5 text-[15px] leading-none md:text-[13px]"
-                  :class="activeTab === 'телефон' ? 'text-[#D33030] border-[#D33030]' : 'text-black border-transparent'"
-                >
-                  телефон
-                </span>
-                <span
-                  v-if="isNewMassege"
-                  class="absolute right-[18%] top-0 h-2.5 w-2.5 rounded-full bg-[#FF4B4B]"
-                />
-              </button>
-            </li>
-
-            <li>
-              <button @click="onTabClick('магазин', '/shop')" class="flex w-full flex-col items-center justify-center px-1.5 py-1.5 md:py-2">
-                <ShoppingBag
-                  :stroke-width="1.7"
-                  class="h-[28px] w-[27px]"
-                  :class="activeTab === 'магазин' ? 'stroke-[#D33030]' : 'stroke-black'"
-                />
-                <span
-                  class="px-2 py-0.5 text-[15px] leading-none md:text-[13px]"
-                  :class="activeTab === 'магазин' ? 'text-[#D33030] border-[#D33030]' : 'text-black border-transparent'"
-                >
-                  магазин
-                </span>
-              </button>
-            </li>
-
-            <li>
-              <button @click="onTabClick('рейтинг', '/rating')" class="flex w-full flex-col items-center justify-center px-1.5 py-1.5 md:py-2">
-                <Trophy
-                  :stroke-width="1.7"
-                  class="h-[25px] w-[27px]"
-                  :class="activeTab === 'рейтинг' ? 'stroke-[#D33030]' : 'stroke-black'"
-                />
-                <span
-                  class="px-2 py-0.5 text-[15px] leading-none md:text-[13px]"
-                  :class="activeTab === 'рейтинг' ? 'text-[#D33030] border-[#D33030]' : 'text-black border-transparent'"
-                >
-                  рейтинг
-                </span>
-              </button>
-            </li>
-
-            <li>
-              <button @click="onTabClick('настройки', '/profile')" class="flex w-full flex-col items-center justify-center px-1.5 py-1.5 md:py-2">
-                <Settings
-                  :stroke-width="1.7"
-                  class="h-[27px] w-[27px]"
-                  :class="activeTab === 'настройки' ? 'stroke-[#D33030]' : 'stroke-black'"
-                />
-                <span
-                  class="px-2 py-0.5 text-[15px] leading-none md:text-[13px]"
-                  :class="activeTab === 'настройки' ? 'text-[#D33030] border-[#D33030]' : 'text-black border-transparent'"
-                >
-                  настройки
-                </span>
-              </button>
-            </li>
-          </ul>
-        </div>
-      </nav>
+      <FooterNav />
     </div>
 </template>
   
 <style scoped>
 .main {
-  font-size: 20px;
-    gap: 16px;
+  font-size: clamp(16px, 4.8vw, 20px);
+    gap: clamp(10px, 2.5vw, 16px);
     display: flex;
     flex-direction: column;
+    min-height: 100dvh;
     overflow-x: hidden;
 }
 
 .display{
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 0px 20px;
+    gap: clamp(10px, 2.8vw, 16px);
+    padding: 0 clamp(12px, 4vw, 20px);
     position: relative;
 }
 .city-section{
@@ -328,6 +220,7 @@ onActivated(() => {
 
 .cards-lane {
     width: 100%;
+    max-width: 100%;
     min-width: 0;
 }
 
@@ -338,23 +231,25 @@ onActivated(() => {
 .right-ornaments {
     pointer-events: none;
     position: absolute;
-    --ornament-right-offset: -8px;
+    --ornament-right-offset: 8px;
     --triangle-width: 111px;
     --triangle-right-offset: 12px;
     --line-gap: 20px;
     --line-width: 6px;
     --triangle-center-from-right: calc(var(--triangle-right-offset) + (var(--triangle-width) / 2) - (var(--line-width) / 2));
-    top: -8px;
+    --triangles-top: var(--header-offset, 0px);
+    top: calc(var(--header-offset, 0px) * -1);
     right: var(--ornament-right-offset);
-    bottom: 0;
+    bottom: auto;
+    height: 100dvh;
     width: 146px;
     z-index: 0;
 }
 
 .right-ornaments__line {
     position: absolute;
-    top: -8px;
-    bottom: -120px;
+    top: 0;
+    bottom: 0;
     width: var(--line-width);
     background: #E2E2E2;
     z-index: 0;
@@ -378,12 +273,14 @@ onActivated(() => {
 }
 
 .right-triangle--top {
-    top: 18px;
-    right: 12px;
+    top: var(--triangles-top);
+    right: 6px;
+    width: 124px;
+    height: 176px;
 }
 
 .right-triangle--middle {
-    top: 146px;
+    top: calc(var(--triangles-top) + 128px);
     right: 6px;
     width: 124px;
     height: 176px;
@@ -392,7 +289,7 @@ onActivated(() => {
 }
 
 .right-triangle--bottom {
-    top: 292px;
+    top: calc(var(--triangles-top) + 274px);
     right: 6px;
     width: 124px;
     height: 176px;
@@ -424,6 +321,14 @@ onActivated(() => {
     background-image: url('/images/triangle_up.svg');
     transform: scaleX(-1);
     transform-origin: center;
+}
+
+.right-triangle__gradient--top {
+    background-image: url('/images/34.svg');
+    inset: 10% 9%;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .right-triangle__gradient--down {
@@ -472,6 +377,7 @@ onActivated(() => {
     overflow-wrap: anywhere;
     word-break: break-word;
     display: -webkit-box;
+    line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -481,37 +387,37 @@ onActivated(() => {
 }
 
 @media (max-width: 460px) {
-  .cards-lane {
-    width: max(198px, calc(100% - 110px)) !important;
-  }
-
   .right-ornaments {
-    --ornament-right-offset: -14px;
-    width: 134px;
-  }
-
-  .right-ornaments__line {
-    top: -34px;
-    bottom: -150px;
+    --ornament-right-offset: 2px;
+    --triangle-width: 92px;
+    --triangle-right-offset: 10px;
+    --line-gap: 16px;
+    --line-width: 5px;
   }
 
   .right-triangle {
-    width: 111px;
-    height: 157px;
+    width: 92px;
+    height: 132px;
+  }
+
+  .right-triangle--top {
+    right: 4px;
+    width: 102px;
+    height: 146px;
   }
 
   .right-triangle--middle {
-    top: 144px;
-    right: 5px;
-    width: 120px;
-    height: 170px;
+    top: calc(var(--triangles-top) + 104px);
+    right: 4px;
+    width: 102px;
+    height: 146px;
   }
 
   .right-triangle--bottom {
-    top: 280px;
-    right: 5px;
-    width: 120px;
-    height: 170px;
+    top: calc(var(--triangles-top) + 212px);
+    right: 4px;
+    width: 102px;
+    height: 146px;
   }
 
   .right-triangle__suslik {
@@ -527,15 +433,121 @@ onActivated(() => {
     width: 70%;
     font-size: 12px;
   }
+
+  .display {
+    --ornament-reserve: clamp(112px, 34vw, 132px);
+    padding-inline: 12px;
+  }
+
+  .plot-section {
+    margin-top: clamp(180px, 52vw, 230px);
+  }
+}
+
+@media (max-width: 360px) {
+  .right-ornaments {
+    --triangle-width: 23.3vw;
+    --triangle-right-offset: 2.2vw;
+    --line-gap: 3.9vw;
+    --line-width: 1.1vw;
+    --ornament-right-offset: 0.4vw;
+  }
+
+  .right-triangle {
+    width: 23.3vw;
+    height: 33.9vw;
+  }
+
+  .right-triangle--top {
+    right: 0.8vw;
+    width: 26.1vw;
+    height: 37.8vw;
+  }
+
+  .right-triangle--middle {
+    top: calc(var(--triangles-top) + 26.7vw);
+    right: 0.8vw;
+    width: 26.1vw;
+    height: 37.8vw;
+  }
+
+  .right-triangle--bottom {
+    top: calc(var(--triangles-top) + 54.4vw);
+    right: 0.8vw;
+    width: 26.1vw;
+    height: 37.8vw;
+  }
+
+  .right-triangle__city-name {
+    font-size: 3.1vw;
+  }
+
+  .display {
+    --ornament-reserve: 29vw;
+    padding-inline: 2.8vw;
+  }
+
+  .plot-section {
+    margin-top: 58vw;
+  }
+
+  .section-title {
+    font-size: 3.9vw !important;
+    margin-bottom: 1.7vw;
+  }
+
 }
 
 @media (max-width: 1023px) {
-  .plot-section {
-    margin-top: 80px;
+  .right-ornaments {
+    --triangle-width: clamp(94px, 25vw, 104px);
+    --triangle-right-offset: 10px;
+    --line-gap: 18px;
+    --line-width: 5px;
   }
 
-  .cards-lane {
-    width: max(206px, calc(100% - 118px));
+  .right-triangle {
+    height: clamp(136px, 36vw, 148px);
+  }
+
+  .right-triangle--top {
+    right: 4px;
+    width: clamp(104px, 29vw, 114px);
+    height: clamp(150px, 40vw, 162px);
+  }
+
+  .right-triangle--middle {
+    top: calc(var(--triangles-top) + clamp(108px, 29vw, 122px));
+    right: 4px;
+    width: clamp(104px, 29vw, 114px);
+    height: clamp(150px, 40vw, 162px);
+  }
+
+  .right-triangle--bottom {
+    top: calc(var(--triangles-top) + clamp(222px, 59vw, 242px));
+    right: 4px;
+    width: clamp(104px, 29vw, 114px);
+    height: clamp(150px, 40vw, 162px);
+  }
+
+  .display {
+    gap: clamp(10px, 2.2vw, 14px);
+    --ornament-reserve: clamp(118px, 35vw, 146px);
+  }
+
+  .plot-section {
+    margin-top: clamp(100px, 24vw, 190px);
+  }
+
+  .city-section,
+  .plot-section {
+    width: calc(100% - var(--ornament-reserve));
+    min-width: 0;
+  }
+
+  .section-title {
+    font-size: clamp(15px, 4.8vw, 22px) !important;
+    margin-bottom: clamp(6px, 2vw, 10px);
   }
 
 }

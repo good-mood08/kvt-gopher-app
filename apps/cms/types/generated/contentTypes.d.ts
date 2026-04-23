@@ -429,6 +429,113 @@ export interface ApiCityCity extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiClothUserClothUser extends Struct.CollectionTypeSchema {
+  collectionName: 'cloth_users';
+  info: {
+    description: '';
+    displayName: 'cloth user';
+    pluralName: 'cloth-users';
+    singularName: 'cloth-user';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    cloth: Schema.Attribute.Relation<'manyToOne', 'api::cloth.cloth'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::cloth-user.cloth-user'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    users_permissions_user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
+export interface ApiClothCloth extends Struct.CollectionTypeSchema {
+  collectionName: 'cloths';
+  info: {
+    description: '';
+    displayName: 'cloth';
+    pluralName: 'cloths';
+    singularName: 'cloth';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    cloth_users: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::cloth-user.cloth-user'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    data: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
+    description: Schema.Attribute.Text;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::cloth.cloth'> &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String;
+    price: Schema.Attribute.BigInteger;
+    publishedAt: Schema.Attribute.DateTime;
+    sislik: Schema.Attribute.Media<
+      'images' | 'files' | 'videos' | 'audios',
+      true
+    >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiDataUserDataUser extends Struct.CollectionTypeSchema {
+  collectionName: 'data_users';
+  info: {
+    description: '';
+    displayName: 'data user';
+    pluralName: 'data-users';
+    singularName: 'data-user';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    cloth_user: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::cloth-user.cloth-user'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    exp: Schema.Attribute.BigInteger;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::data-user.data-user'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    users_permissions_user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
 export interface ApiGameGame extends Struct.CollectionTypeSchema {
   collectionName: 'games';
   info: {
@@ -1321,6 +1428,10 @@ export interface PluginUsersPermissionsUser
   };
   attributes: {
     blocked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    cloth_users: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::cloth-user.cloth-user'
+    >;
     confirmationToken: Schema.Attribute.String & Schema.Attribute.Private;
     confirmed: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     createdAt: Schema.Attribute.DateTime;
@@ -1381,6 +1492,9 @@ declare module '@strapi/strapi' {
       'admin::user': AdminUser;
       'api::achievement.achievement': ApiAchievementAchievement;
       'api::city.city': ApiCityCity;
+      'api::cloth-user.cloth-user': ApiClothUserClothUser;
+      'api::cloth.cloth': ApiClothCloth;
+      'api::data-user.data-user': ApiDataUserDataUser;
       'api::game.game': ApiGameGame;
       'api::location.location': ApiLocationLocation;
       'api::map-story.map-story': ApiMapStoryMapStory;

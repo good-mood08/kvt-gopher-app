@@ -6,6 +6,50 @@ const { fetchUser,logout } = useStrapiAuth()
 const user = await fetchUser()
 const { find, findOne } = useStrapi()
 const userId = user.value?.documentId
+
+const FALLBACK_SUSLIK = '/images/suslo.svg'
+
+const ownedCloths = ref<Array<{
+  documentId: string
+  dataUrl: string
+  sislikUrl: string
+}>>([])
+
+if (userId) {
+  const clothUsersRes = await find('cloth-users', {
+    filters: {
+      users_permissions_user: { documentId: { $eq: userId } },
+    },
+    populate: {
+      cloth: { populate: { data: true, sislik: true } },
+    },
+  })
+  const byId = new Map<string, { documentId: string, dataUrl: string, sislikUrl: string }>()
+  for (const row of clothUsersRes?.data ?? []) {
+    const cloth = row.cloth as Record<string, unknown> | undefined
+    if (!cloth?.documentId) continue
+    const id = String(cloth.documentId)
+    if (byId.has(id)) continue
+    const sislikUrl = useStrapiMediaUrlFirst(cloth.sislik)
+    const dataUrl = useStrapiMediaUrl(cloth.data)
+    byId.set(id, {
+      documentId: id,
+      dataUrl: dataUrl || '/images/Jacket.svg',
+      sislikUrl: sislikUrl || dataUrl || FALLBACK_SUSLIK,
+    })
+  }
+  ownedCloths.value = [...byId.values()]
+}
+
+const suslic = ref(FALLBACK_SUSLIK)
+
+function equipCloth(sislikUrl: string) {
+  suslic.value = sislikUrl || FALLBACK_SUSLIK
+}
+
+function unequip() {
+  suslic.value = FALLBACK_SUSLIK
+}
 const maps = await find('maps',{
     populate:'*'
 })
@@ -71,13 +115,12 @@ const handleCitySelected = ({ city }) => {
 setData('cityId', city, 1 , 'd')
 }
 
-const suslic = ref('/images/suslo.svg')
 </script>
 
 
 <template >
     <div class="main">
-        <TheHeader :username="name "/>
+        <TheHeader :username="name"/>
         <div class="display">
             <CitySelect
                 :cities="cities.data"
@@ -105,15 +148,15 @@ const suslic = ref('/images/suslo.svg')
                 <div class="ch-area">
                     <img :src="suslic" class="p" style="height: 202px;">
                     <div class="inventar-area">
-                        <Block @click="() => {suslic = '/images/suslo.svg' }" class="e"><div class="ssss"><Icon class="wwww" name="tdesign:close"></Icon></div></Block>
-                        <Block @click="() => {suslic = '/images/suskic_in_jacket.svg' }" class="g"><img src="/images/Jacket.svg" alt="" style="height: 37px;"></Block>
-                        <Block class="g"></Block>
-                        <Block class="g"></Block>
-                        <Block class="g"></Block>
-                        <Block class="g"></Block>
-                        <Block class="g"></Block>
-                        <Block class="g"></Block>
-                        <Block class="g"></Block>
+                        <Block class="e" @click="unequip"><div class="ssss"><Icon class="wwww" name="tdesign:close"></Icon></div></Block>
+                        <Block
+                            v-for="c in ownedCloths"
+                            :key="c.documentId"
+                            class="g"
+                            @click="equipCloth(c.sislikUrl)"
+                        >
+                            <img :src="c.dataUrl" alt="" class="inv-thumb">
+                        </Block>
                     </div>
                 </div>            
             </div>
@@ -131,6 +174,7 @@ const suslic = ref('/images/suslo.svg')
                     выход из профиля
                 </ButtonAction>
         </div>
+        <FooterNav />
     </div>
 </template>
 
@@ -166,6 +210,11 @@ const suslic = ref('/images/suslo.svg')
     align-items: center;
     width: 57px;
     aspect-ratio: 1;
+}
+.inv-thumb{
+    max-width: 42px;
+    max-height: 42px;
+    object-fit: contain;
 }
 .tab-area-grid{
     display: grid;
@@ -224,7 +273,7 @@ const suslic = ref('/images/suslo.svg')
     display: flex;
     flex-direction: column;
     gap: 20px;
-    padding: 0px 20px;
+    padding: 0px 20px 112px;
 }
 
 .inventar-area{
@@ -232,6 +281,12 @@ const suslic = ref('/images/suslo.svg')
     grid-template-columns: repeat(3,1fr);
     grid-template-rows: repeat(3,1fr);
     gap: 16px;
+}
+
+@media (min-width: 1024px) {
+  .display {
+    padding-bottom: 132px;
+  }
 }
 
 </style>
