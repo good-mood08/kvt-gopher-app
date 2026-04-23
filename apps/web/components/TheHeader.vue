@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Bell } from 'lucide-vue-next'
+
 defineProps<{
     /**
      * имя пользователя
@@ -6,6 +8,9 @@ defineProps<{
     username: string
 }>()
 
+const goToNotifications = async () => {
+  await navigateTo('/notification')
+}
 </script>
 <template>
     <div class="header-shell">
@@ -17,7 +22,9 @@ defineProps<{
 
                 <p class="name">{{ username }}</p>
                 <p class="exp">0 EXP</p>
-                <button class="help-mark" type="button" aria-label="Справка">?</button>
+                <button class="help-mark" type="button" aria-label="Уведомления" @click.stop="goToNotifications">
+                  <Bell :stroke-width="2" class="help-mark-icon" />
+                </button>
             </div>
         </div>
     </div>
@@ -104,15 +111,17 @@ defineProps<{
     border: 1px solid #dddddd;
     background: #f0f0f0;
     color: #d53c3c;
-    font-family: 'Gothic 60';
-    font-size: 24px;
-    line-height: 0.95;
     display: inline-flex;
     justify-content: center;
     align-items: center;
     padding: 0;
     transform: translateY(-50%);
     cursor: default;
+}
+
+.help-mark-icon {
+    width: 18px;
+    height: 18px;
 }
 
 @media (max-width: 480px) {
@@ -142,9 +151,44 @@ defineProps<{
     .help-mark {
         width: 35px;
         height: 34px;
-        font-size: 24px;
         right: 10px;
         top: 50%;
+    }
+}
+
+@media (max-width: 360px) {
+    .header-shell {
+        min-height: 22vw;
+    }
+
+    .header {
+        padding: 2.8vw 3.3vw 2.2vw;
+        min-height: 22vw;
+    }
+
+    .header-content {
+        grid-template-columns: 11.7vw auto;
+        column-gap: 2.8vw;
+    }
+
+    .img {
+        width: 11.7vw;
+        height: 11.7vw;
+    }
+
+    .name {
+        font-size: 4.7vw;
+    }
+
+    .exp {
+        font-size: 3.1vw;
+    }
+
+    .help-mark {
+        width: 8.3vw;
+        height: 8.3vw;
+        font-size: 5.6vw;
+        right: 2.2vw;
     }
 }
 

@@ -76,6 +76,12 @@
       "relation": "oneToMany",
       "target": "api::user-map-story.user-map-story",
       "mappedBy": "users_permissions_user"
+    },
+    "cloth_users": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::cloth-user.cloth-user",
+      "mappedBy": "users_permissions_user"
     }
   }
 }

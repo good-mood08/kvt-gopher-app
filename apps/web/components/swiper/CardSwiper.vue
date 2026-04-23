@@ -38,14 +38,18 @@ const spaceBetween = ref(26)
 const slidesOffsetAfter = ref(96)
 
 const updateSlidesPerView = () => {
-  if (window.innerWidth < 768) {
+  if (window.innerWidth < 380) {
     slidesPerView.value = 'auto'
-    spaceBetween.value = 24
-    slidesOffsetAfter.value = 90
+    spaceBetween.value = Math.round(window.innerWidth * 0.028)
+    slidesOffsetAfter.value = Math.round(window.innerWidth * 0.05)
+  } else if (window.innerWidth < 768) {
+    slidesPerView.value = 'auto'
+    spaceBetween.value = Math.round(window.innerWidth * 0.033)
+    slidesOffsetAfter.value = Math.round(window.innerWidth * 0.078)
   } else if (window.innerWidth < 1024) {
     slidesPerView.value = 'auto'
-    spaceBetween.value = 26
-    slidesOffsetAfter.value = 98
+    spaceBetween.value = Math.round(window.innerWidth * 0.04)
+    slidesOffsetAfter.value = Math.round(window.innerWidth * 0.11)
   } else {
     slidesPerView.value = 'auto'
     spaceBetween.value = 28
@@ -113,11 +117,11 @@ const onSwiper = (swiper: any) => {
 }
 
 .plot-slide {
-  width: min(320px, calc(100% - 8px)) !important;
+  width: min(300px, 100%) !important;
   transition: transform 0.25s ease, opacity 0.25s ease;
   transform: scale(0.94);
   transform-origin: left center;
-  opacity: 0.56;
+  opacity: 0.82;
   position: relative;
   z-index: 1;
 }
@@ -130,7 +134,7 @@ const onSwiper = (swiper: any) => {
 
 .plot-slide.swiper-slide-next,
 .plot-slide.swiper-slide-prev {
-  opacity: 0.78;
+  opacity: 0.92;
   transform: scale(0.97);
   z-index: 2;
 }
@@ -142,7 +146,13 @@ const onSwiper = (swiper: any) => {
   }
   
   .plot-slide {
-    width: min(304px, calc(100% - 10px)) !important;
+    width: min(80vw, 100%) !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .plot-slide {
+    width: min(75.5vw, 100%) !important;
   }
 }
 </style>
