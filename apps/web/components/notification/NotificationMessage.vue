@@ -197,14 +197,14 @@ const translatePriority = (priority: any) => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #4f7dff;
 }
 
 .message:hover .message-content {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08),0 8px 24px rgba(0, 0, 0, 0.04);
 }
 
-.message.info .message-content { border-left: 4px solid #3b82f6; }
+.message.info .message-content { border-left: 4px solid #4f7dff; }
 .message.success .message-content { border-left: 4px solid #22c55e; }
 .message.warning .message-content { border-left: 4px solid #eab308; }
 .message.error .message-content { border-left: 4px solid #ef4444; }
@@ -253,7 +253,7 @@ const translatePriority = (priority: any) => {
   object-fit: cover;
 }
 
-.info .message-icon { border: 2px solid #3b82f6; }
+.info .message-icon { border: 2px solid #4f7dff; }
 .success .message-icon { border: 2px solid #22c55e; }
 .warning .message-icon { border: 2px solid #eab308; }
 .error .message-icon { border: 2px solid #ef4444; }
@@ -320,7 +320,7 @@ const translatePriority = (priority: any) => {
 .message-details {
   font-size: 13px;
   font-weight: 500;
-  color: #3b82f6;
+  color: #4f7dff;
   transition: all 0.3s ease;
   cursor: pointer;
 }

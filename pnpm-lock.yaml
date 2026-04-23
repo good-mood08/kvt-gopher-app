@@ -79,9 +79,12 @@ importers:
       '@vite-pwa/nuxt':
         specifier: ^1.1.1
         version: 1.1.1(vite@6.3.5)(workbox-build@7.4.0)(workbox-window@7.4.0)
+      '@yandex/ymaps3-default-ui-theme':
+        specifier: ^0.0.24
+        version: 0.0.24
       '@yandex/ymaps3-types':
-        specifier: ^1.0.16452936
-        version: 1.0.16477558
+        specifier: ^1.0.19345674
+        version: 1.0.19345674
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -113,8 +116,8 @@ importers:
         specifier: ^2.2.8
         version: 2.2.10(typescript@5.8.3)
       vue-yandex-maps:
-        specifier: ^2.1.7
-        version: 2.1.8(nuxt@3.17.2)(vue@3.5.13)
+        specifier: ^3.0.4
+        version: 3.0.4(@yandex/ymaps3-cartesian-projection@0.0.6)(@yandex/ymaps3-clusterer@0.0.12)(@yandex/ymaps3-context-menu@0.0.2)(@yandex/ymaps3-default-ui-theme@0.0.24)(@yandex/ymaps3-drawer-control@0.0.2)(@yandex/ymaps3-hint@0.1.2)(@yandex/ymaps3-minimap@0.0.4)(@yandex/ymaps3-resizer@0.0.2)(@yandex/ymaps3-signpost@0.0.2)(@yandex/ymaps3-spinner@0.0.2)(@yandex/ymaps3-types@1.0.19345674)(@yandex/ymaps3-web-mercator-projection@0.0.5)(@yandex/ymaps3-world-utils@0.0.19230700)(nuxt@3.17.2)(vue@3.5.13)
     devDependencies:
       '@nuxt/devtools':
         specifier: latest
@@ -8176,11 +8179,53 @@ packages:
     resolution: {integrity: sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==}
     dev: false
 
-  /@yandex/ymaps3-types@1.0.16477558:
-    resolution: {integrity: sha512-02FP+IQ2KRiYPD3U3HDiOQxVaHBMR2hZVc1N51lgHx7MElawpuV/P0BU8ieFIQnW6jRk9t+AHib/y0zkJHPlmg==}
+  /@yandex/ymaps3-cartesian-projection@0.0.6:
+    resolution: {integrity: sha512-k+K4SUg3xegPM2PdLdGObeyZkEH8MwHEFlFQPUnv5ZtnvKCTZ6VSrMVrn5Hvf1J8IMgHYVZm/0GxAJCVyWPxtQ==}
+    dev: false
+
+  /@yandex/ymaps3-clusterer@0.0.12:
+    resolution: {integrity: sha512-APRJc4mZ+amPwoC7pKhVC1quvsX3mLkCi7V3AJUyp7noV/3w0yDzCdWqnMnMzu4JHR1YXP2TfPqYqQ1b8cEoeQ==}
+    dev: false
+
+  /@yandex/ymaps3-context-menu@0.0.2:
+    resolution: {integrity: sha512-i0/ALd6pzVssvzczgcRJH5SzL3dnehHRwFAwrRdVj/xdb5c5C6VTolr+HhBBh0BCbS+p+fOEVoAEIAibynyYfQ==}
+    dev: false
+
+  /@yandex/ymaps3-default-ui-theme@0.0.24:
+    resolution: {integrity: sha512-75ukFfADLE0XbVcgq661kF+bgfIlMfD30dqxrwFgL2nbNcZRQhxwq/YeqalbKZkEbd+/D6l7iKLgHzR8b4PQFA==}
+    dev: false
+
+  /@yandex/ymaps3-drawer-control@0.0.2:
+    resolution: {integrity: sha512-gy4MqNljXQdsqPznBb+Jk//4wTI1LdlamJE3MG9m3tHnVOM/9kH2xUQc+wsrIG1hPUqj10VrTw81A/oGA8Rjbw==}
+    dev: false
+
+  /@yandex/ymaps3-hint@0.1.2:
+    resolution: {integrity: sha512-AcUlt0ugSlglaJmb5DdZpi6OR0FHCcR6me9Ti1/rkmll//x8vwWl8w0LsU43HZbfGK3ZLyuazlRDLXVe3UoL0A==}
+    dev: false
+
+  /@yandex/ymaps3-minimap@0.0.4:
+    resolution: {integrity: sha512-Mw8WKNxVJZHPy9ZZPvU/3HscHXEfJKkcoRJSAAFysDfihpcdPRR8mc/zflFjQmg9VaaLLD9aSR7yT5O+EVpwZA==}
+    dev: false
+
+  /@yandex/ymaps3-resizer@0.0.2:
+    resolution: {integrity: sha512-1D/b8+GqrZOOXjuPYnffNBdpAtrUyfJPhPY6AaaJKdaF87Rx1JJKYARktblEIPjYjie9ksj3gnVKVh9OLPVLsQ==}
+    dev: false
+
+  /@yandex/ymaps3-signpost@0.0.2:
+    resolution: {integrity: sha512-p7UYkzrcfKloAPqcvK+rd2WHr1kW5ENLlwTtmY7B+bcjye32HALCmBn53VLnuUAl9xW6s6M1RGdJ8gdmubR5aQ==}
+    dev: false
+
+  /@yandex/ymaps3-spinner@0.0.2:
+    resolution: {integrity: sha512-nDze/MfYAn7JIbBOzYNBhrEhgF1RHnymJGT7W+y+uVKCTmaUaGXOMeZF2Z8+GuR3BvszZ73fWFE3IfGySOSw+g==}
+    dependencies:
+      spin.js: 4.1.2
+    dev: false
+
+  /@yandex/ymaps3-types@1.0.19345674:
+    resolution: {integrity: sha512-7R16mJueDKCIWzIvhFBgZvl5tVr8UYQZd79bga/iVSk1+wBe99w34/lcUHTnsWQMSSZzKTVL+ncdPpqTH8iMvw==}
     peerDependencies:
-      '@types/react': 16-18
-      '@types/react-dom': 16-18
+      '@types/react': ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      '@types/react-dom': ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       '@vue/runtime-core': '3'
     peerDependenciesMeta:
       '@types/react':
@@ -8189,6 +8234,14 @@ packages:
         optional: true
       '@vue/runtime-core':
         optional: true
+    dev: false
+
+  /@yandex/ymaps3-web-mercator-projection@0.0.5:
+    resolution: {integrity: sha512-yRGugQDq0y7x8sAKzMqRj92i4IFeSW5wOEVf6tmVIO/H/XEt3hhvI9BsSwZToUfoV957dPbvFrPwV345ndctdQ==}
+    dev: false
+
+  /@yandex/ymaps3-world-utils@0.0.19230700:
+    resolution: {integrity: sha512-3sen76szCmcMsfBwgTTXgxHlKj1RQRfwpkbsUY8s5TJ77Bq3ElG9eor7ZIXZQ4dysf7ZpbJxU9EztFyfXmMnFg==}
     dev: false
 
   /abbrev@1.1.1:
@@ -17969,6 +18022,10 @@ packages:
     resolution: {integrity: sha512-1POYv7uv2gXoyGFpBCmpDVSNV74IfsWlDW216UPjbWufNf+bSU6GdbDsxdcxtfwb4xlI3yxzOTKClUosxARYrQ==}
     engines: {node: '>=0.10.0'}
 
+  /spin.js@4.1.2:
+    resolution: {integrity: sha512-ua/yEpxEwyEUWs57tMQYdik/KJ12sQRyMXjSlK/Ai927aEUDVY3FXUi4ml4VvlLCTQNIjC6tHyjSLBrJzFAqMA==}
+    dev: false
+
   /sprintf-js@1.0.3:
     resolution: {integrity: sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==}
     dev: false
@@ -19948,26 +20005,44 @@ packages:
       typescript: 5.8.3
     dev: false
 
-  /vue-yandex-maps@2.1.8(nuxt@3.17.2)(vue@3.5.13):
-    resolution: {integrity: sha512-2/l5n7u3qf9ccY5oxjZEEnkLl+SAFbEHdzp1WvF+benFQcCENKYVGkf0gv7tElKN1upoZxhgGEsUByGg2g3FPg==}
-    engines: {node: '>=18'}
+  /vue-yandex-maps@3.0.4(@yandex/ymaps3-cartesian-projection@0.0.6)(@yandex/ymaps3-clusterer@0.0.12)(@yandex/ymaps3-context-menu@0.0.2)(@yandex/ymaps3-default-ui-theme@0.0.24)(@yandex/ymaps3-drawer-control@0.0.2)(@yandex/ymaps3-hint@0.1.2)(@yandex/ymaps3-minimap@0.0.4)(@yandex/ymaps3-resizer@0.0.2)(@yandex/ymaps3-signpost@0.0.2)(@yandex/ymaps3-spinner@0.0.2)(@yandex/ymaps3-types@1.0.19345674)(@yandex/ymaps3-web-mercator-projection@0.0.5)(@yandex/ymaps3-world-utils@0.0.19230700)(nuxt@3.17.2)(vue@3.5.13):
+    resolution: {integrity: sha512-uQxhym7fE+ZrEXHZKUrLwEwWU4CApGHapjDDiB83xZdnxNbXoO9EHh0SGTfbWU6IzA4qXx5w6bgyeWDMLTwo9g==}
+    engines: {node: '>=20'}
     peerDependencies:
-      '@vue/composition-api': '>=1'
-      nuxt: ^2.16 || ^3
-      vue: ^2.7 || ^3.3
+      '@yandex/ymaps3-cartesian-projection': '>=0.0.6'
+      '@yandex/ymaps3-clusterer': '>=0.0.12'
+      '@yandex/ymaps3-context-menu': '>=0.0.2'
+      '@yandex/ymaps3-default-ui-theme': '>=0.0.24'
+      '@yandex/ymaps3-drawer-control': '>=0.0.2'
+      '@yandex/ymaps3-hint': '>=0.1.2'
+      '@yandex/ymaps3-minimap': '>=0.0.4'
+      '@yandex/ymaps3-resizer': '>=0.0.2'
+      '@yandex/ymaps3-signpost': '>=0.0.2'
+      '@yandex/ymaps3-spinner': '>=0.0.2'
+      '@yandex/ymaps3-types': '>=1.0.19287993'
+      '@yandex/ymaps3-web-mercator-projection': '>=0.0.5'
+      '@yandex/ymaps3-world-utils': '>=0.0.19230700'
+      nuxt: '>=3.12'
+      vue: '>=3.3'
     peerDependenciesMeta:
-      '@vue/composition-api':
-        optional: true
       nuxt:
         optional: true
     dependencies:
-      '@yandex/ymaps3-types': 1.0.16477558
+      '@yandex/ymaps3-cartesian-projection': 0.0.6
+      '@yandex/ymaps3-clusterer': 0.0.12
+      '@yandex/ymaps3-context-menu': 0.0.2
+      '@yandex/ymaps3-default-ui-theme': 0.0.24
+      '@yandex/ymaps3-drawer-control': 0.0.2
+      '@yandex/ymaps3-hint': 0.1.2
+      '@yandex/ymaps3-minimap': 0.0.4
+      '@yandex/ymaps3-resizer': 0.0.2
+      '@yandex/ymaps3-signpost': 0.0.2
+      '@yandex/ymaps3-spinner': 0.0.2
+      '@yandex/ymaps3-types': 1.0.19345674
+      '@yandex/ymaps3-web-mercator-projection': 0.0.5
+      '@yandex/ymaps3-world-utils': 0.0.19230700
       nuxt: 3.17.2(rollup@2.80.0)(typescript@5.8.3)(vite@6.3.5)(vue-tsc@2.2.10)
       vue: 3.5.13(typescript@5.8.3)
-    transitivePeerDependencies:
-      - '@types/react'
-      - '@types/react-dom'
-      - '@vue/runtime-core'
     dev: false
 
   /vue@3.5.13(typescript@5.8.3):

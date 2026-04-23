@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { getDistance } from 'geolib';
-import type { YMapDefaultMarker } from '@yandex/ymaps3-types/packages/markers';
 import { YandexMapDefaultMarker } from 'vue-yandex-maps';
-import { defineComponent } from 'vue';
-import type { PropType } from 'vue';
 
-const defaultMarker = shallowRef<YMapDefaultMarker | null>(null);
+const defaultMarker = shallowRef<any | null>(null);
 
 /**
  * Пропсы для маркера
@@ -50,18 +47,22 @@ interface MarkerProps {
    * картинки точки
    */
   images?: string[]
+  completed?: boolean
+  popupOpen?: boolean
 }
 
 const props = withDefaults(defineProps<MarkerProps>(), {
   name: '',
   description: '',
-  images: () => []
+  images: () => [],
+  completed: false,
+  popupOpen: false,
 })
 
 const emit = defineEmits<{
   select: []
+  markerClick: [id: string | number]
   popupOpen: [id: string | number]
-  popupRegisterClose: [payload: { id: string | number, close: () => void }]
   popupClose: [id: string | number]
 }>()
 
@@ -100,79 +101,55 @@ function stopAutoScroll() {
 }
 
 const isHovered = ref(false)
-const isDebugPopup = import.meta.dev
-const PopupLifecycle = defineComponent({
-  props: {
-    markerId: {
-      type: [String, Number],
-      required: true
-    },
-    closeFn: {
-      type: Function as PropType<() => void>,
-      required: true
-    }
-  },
-  emits: ['registerClose'],
-  setup(lifecycleProps, { emit: lifecycleEmit }) {
-    watch(() => lifecycleProps.closeFn, (closeFn) => {
-      lifecycleEmit('registerClose', { id: lifecycleProps.markerId, close: lifecycleProps.closeFn })
-    }, { immediate: true })
-
-    return () => null
-  }
-})
-
-function handlePopupRegisterClose(payload: { id: string | number, close: () => void }) {
-  if (isDebugPopup) {
-    console.log('[MapPopup][Marker] register close handler', { markerId: payload.id })
-  }
-  emit('popupRegisterClose', payload)
+function handleMarkerClick() {
+  console.info('[MapPopup][Marker] click', { markerId: props.markerId, popupOpen: props.popupOpen })
+  emit('markerClick', props.markerId)
 }
 
-function handlePopupClose(close: () => void) {
-  if (isDebugPopup) {
-    console.log('[MapPopup][Marker] close button click', { markerId: props.markerId })
-  }
-  close()
+function handlePopupClose() {
+  console.info('[MapPopup][Marker] close button click', { markerId: props.markerId })
   emit('popupClose', props.markerId)
 }
 
-function handleMarkerClick() {
-  const marker = defaultMarker.value as any
-  const isPopupOpen = Boolean(marker?._popupIsOpen)
-
-  if (!isPopupOpen) {
-    marker?._togglePopup?.()
-  }
-
-  if (Boolean(marker?._popupIsOpen)) {
-    emit('popupOpen', props.markerId)
-  }
-}
+const markerColor = computed(() => (props.completed ? 'green' : 'blue'))
+const markerIconName = computed(() => (props.completed ? 'checkpoint' : 'landmark'))
+const markerSettings = computed(() => ({
+  coordinates: [props.coords.lat, props.coords.lon],
+  onClick: handleMarkerClick,
+  popup: {
+    position: 'top',
+    hidesMarker: true,
+    show: props.popupOpen,
+    onOpen: () => {
+      console.info('[MapPopup][Marker] popup onOpen', { markerId: props.markerId })
+      emit('popupOpen', props.markerId)
+    },
+    onClose: () => {
+      console.info('[MapPopup][Marker] popup onClose', { markerId: props.markerId })
+      emit('popupClose', props.markerId)
+    },
+  },
+  color: markerColor.value,
+  iconName: markerIconName.value,
+  size: 'normal',
+  title: props.completed ? 'пройдена' : 'пройти',
+  subtitle: props.name || '',
+}) as any)
 </script>
 
 <template >
   <yandex-map-default-marker
     
     v-model="defaultMarker"
-    :settings="{
-      coordinates: [props.coords.lat, props.coords.lon],
-      popup: { position: 'top', hidesMarker: true },
-      onClick: handleMarkerClick
-    }"
+    :settings="markerSettings"
   >
-    <template #popup="{ close }">
-      <PopupLifecycle
-        :marker-id="props.markerId"
-        :close-fn="close"
-        @register-close="handlePopupRegisterClose"
-      />
+    <template #popup>
       <div 
         class="popup"
         @mouseenter="isHovered = true; stopAutoScroll()"
         @mouseleave="isHovered = false; startAutoScroll()"
       >
-        <button class="close-button" @click="handlePopupClose(close)">&times;</button>
+        <button class="close-button" @click="handlePopupClose">&times;</button>
         
         <div v-if="props.images?.length" class="image-container">
           <transition-group name="fade">
@@ -199,7 +176,7 @@ function handleMarkerClick() {
           <TenText v-if="props.description" class="description">{{ props.description }}</TenText>
           
           <button 
-            v-if="is_range(500)" 
+            v-if="is_range(250)" 
             class="select-button"
             @click.stop="emit('select')"
           >
@@ -219,7 +196,7 @@ function handleMarkerClick() {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   position: relative;
-  width: 280px;
+  width: 240px;
   transform-style: preserve-3d;
   perspective: 1000px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -237,9 +214,9 @@ function handleMarkerClick() {
   background: rgba(255, 255, 255, 0.9);
   border: none;
   border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  font-size: 20px;
+  width: 24px;
+  height: 24px;
+  font-size: 18px;
   cursor: pointer;
   z-index: 2;
   padding: 0;
@@ -257,7 +234,7 @@ function handleMarkerClick() {
 
 .image-container {
   position: relative;
-  height: 180px;
+  height: 150px;
   overflow: hidden;
 }
 
@@ -297,13 +274,13 @@ function handleMarkerClick() {
 }
 
 .content {
-  padding: 16px;
+  padding: 12px;
   transform: translateZ(20px);
 }
 
 .title {
   margin: 0 0 8px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: #1a1a1a;
   opacity: 0;
@@ -312,7 +289,7 @@ function handleMarkerClick() {
 
 .description {
   margin: 0 0 16px;
-  font-size: 14px;
+  font-size: 13px;
   color: #666;
   line-height: 1.4;
   opacity: 0;
@@ -325,8 +302,8 @@ function handleMarkerClick() {
   color: white;
   border: none;
   border-radius: 8px;
-  padding: 10px 16px;
-  font-size: 14px;
+  padding: 9px 14px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;

@@ -47,7 +47,7 @@ export function useTts() {
 
   const currentAudio = ref<HTMLAudioElement | null>(null)
   let objectUrl: string | null = null
-  const abortController = ref<AbortController | null>(null)
+  let activeRequestToken = 0
 
   const isLoading = ref(false)
   const isPlaying = ref(false)
@@ -70,10 +70,9 @@ export function useTts() {
   }
 
   function stop() {
+    activeRequestToken += 1
     releasePlaybackWait?.()
     releasePlaybackWait = null
-    abortController.value?.abort()
-    abortController.value = null
     cleanupAudio()
     isLoading.value = false
   }
@@ -85,9 +84,7 @@ export function useTts() {
     }
 
     stop()
-
-    const ac = new AbortController()
-    abortController.value = ac
+    const requestToken = activeRequestToken
     isLoading.value = true
 
     try {
@@ -101,8 +98,8 @@ export function useTts() {
           text: trimmed.slice(0, 4096),
           ...(opts.voice ? { voice: opts.voice } : {}),
         }),
-        signal: ac.signal,
       })
+      if (requestToken !== activeRequestToken) return
 
       const contentTypeFromHeaders =
         res.headers && typeof res.headers.get === 'function'
@@ -110,6 +107,7 @@ export function useTts() {
           : null
 
       const arrayBuffer = await res.arrayBuffer()
+      if (requestToken !== activeRequestToken) return
       const decoder = new TextDecoder('utf-8', { fatal: false })
 
       const httpOk = responseHttpOk(res)
@@ -163,14 +161,28 @@ export function useTts() {
       currentAudio.value = audio
 
       audio.onplay = () => {
+        if (requestToken !== activeRequestToken) {
+          cleanupAudio()
+          return
+        }
         isPlaying.value = true
       }
 
       await audio.play()
+      if (requestToken !== activeRequestToken) {
+        cleanupAudio()
+        return
+      }
 
       await new Promise<void>((resolve) => {
         releasePlaybackWait = resolve
         const finish = () => {
+          if (requestToken !== activeRequestToken) {
+            const r = releasePlaybackWait
+            releasePlaybackWait = null
+            r?.()
+            return
+          }
           cleanupAudio()
           const r = releasePlaybackWait
           releasePlaybackWait = null
@@ -187,16 +199,15 @@ export function useTts() {
       releasePlaybackWait?.()
       releasePlaybackWait = null
       cleanupAudio()
-      const err = e as { name?: string; message?: string }
-      if (err?.name === 'AbortError') {
-        // ttsLog('запрос отменён (AbortError)')
+      if (requestToken !== activeRequestToken) {
         return
       }
       // ttsWarn('исключение при озвучке', e)
       throw e
     } finally {
-      abortController.value = null
-      isLoading.value = false
+      if (requestToken === activeRequestToken) {
+        isLoading.value = false
+      }
     }
   }
 

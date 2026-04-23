@@ -20,8 +20,8 @@
       "target": "api::location.location",
       "inversedBy": "game"
     },
-    "word": {
-      "type": "string"
+    "data": {
+      "type": "json"
     }
   }
 }

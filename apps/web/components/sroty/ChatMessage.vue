@@ -94,8 +94,8 @@ defineEmits(['imageClick', 'imageLoad'])
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
   flex-shrink: 0;
   animation: avatarPop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
@@ -116,7 +116,7 @@ defineEmits(['imageClick', 'imageLoad'])
 
 .message-content {
   margin: 0 10px;
-  max-width: 70%;
+  max-width: 74%;
 }
 
 @media (max-width: 640px) {
@@ -130,14 +130,15 @@ defineEmits(['imageClick', 'imageLoad'])
 }
 
 .message-bubble {
-  padding: 12px;
-  border-radius: 12px;
+  padding: 12px 13px;
+  border-radius: 14px;
   position: relative;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
   word-wrap: break-word;
   overflow-wrap: break-word;
   transform-origin: left center;
   animation: bubbleExpand 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(4px);
 }
 
 .message-bubble::before {
@@ -150,45 +151,49 @@ defineEmits(['imageClick', 'imageLoad'])
 }
 
 .message-wrapper:not(.current-user) .message-bubble {
-  background-color: #e5e7eb;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.95));
+  border: 1px solid rgba(148, 163, 184, 0.22);
 }
 
 .message-wrapper.current-user .message-bubble {
-  background-color: #3b82f6;
+  background: linear-gradient(135deg, #4f7dff, #6366f1);
   color: white;
   transform-origin: right center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .message-wrapper:not(.current-user) .message-bubble::before {
-  border-right-color: #e5e7eb;
+  border-right-color: #f1f5f9;
   left: -15px;
 }
 
 .message-wrapper.current-user .message-bubble::before {
-  border-left-color: #3b82f6;
+  border-left-color: #586ffb;
   right: -15px;
 }
 
 .author-name {
   font-size: 0.875rem;
   margin-bottom: 0.25rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   opacity: 0;
   animation: fadeIn 0.3s ease forwards 0.2s;
 }
 
 .message-text {
   margin-bottom: 0.75rem;
-  line-height: 1.5;
+  line-height: 1.45;
   opacity: 0;
   animation: fadeIn 0.3s ease forwards 0.3s;
 }
 
 .message-image {
   max-width: 100%;
-  border-radius: 8px;
+  border-radius: 10px;
   display: block;
   margin-top: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.16);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   opacity: 0;

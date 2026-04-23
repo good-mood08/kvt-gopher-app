@@ -301,7 +301,11 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background:
+    radial-gradient(80% 60% at 20% 10%, rgba(96, 165, 250, 0.2), transparent 60%),
+    radial-gradient(70% 50% at 90% 90%, rgba(99, 102, 241, 0.2), transparent 60%),
+    rgba(9, 12, 24, 0.56);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -313,11 +317,14 @@ onUnmounted(() => {
   max-width: 42rem;
   height: calc(100vh - 2rem);
   margin: 1rem;
-  background-color: white;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 255, 0.98) 100%);
   border-radius: 1rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  box-shadow: 0 24px 60px rgba(16, 24, 40, 0.28);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .slide-enter-active,
@@ -338,8 +345,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 1rem;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: white;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(245, 248, 255, 0.96) 100%);
   border-top-left-radius: 1rem;
   border-top-right-radius: 1rem;
 }
@@ -382,8 +389,8 @@ onUnmounted(() => {
 }
 
 .header-audio-btn.is-active {
-  border-color: rgba(71, 125, 255, 0.45);
-  color: rgba(71, 125, 255, 1);
+  border-color: rgba(79, 125, 255, 0.45);
+  color: rgba(79, 125, 255, 1);
 }
 
 .header-audio-icon {
@@ -397,6 +404,10 @@ onUnmounted(() => {
   overflow-y: auto;
   padding: 1rem;
   -webkit-overflow-scrolling: touch;
+  background:
+    radial-gradient(55rem 20rem at -10% -20%, rgba(147, 197, 253, 0.14), transparent 52%),
+    radial-gradient(55rem 20rem at 110% 120%, rgba(196, 181, 253, 0.12), transparent 52%),
+    rgba(248, 250, 255, 0.7);
 }
 
 .messages-container::-webkit-scrollbar {
@@ -418,8 +429,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  background-color: white;
-  border-top: 1px solid #e5e7eb;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(247, 250, 255, 0.95) 100%);
+  border-top: 1px solid rgba(148, 163, 184, 0.24);
   border-bottom-left-radius: 1rem;
   border-bottom-right-radius: 1rem;
 }
@@ -440,7 +451,7 @@ onUnmounted(() => {
 .next-button {
   flex-shrink: 0;
   padding: 0.75rem 1.5rem;
-  background-color: rgba(71, 125, 255, 1);
+  background: linear-gradient(135deg, rgba(79, 125, 255, 1), rgba(95, 103, 247, 1));
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -450,9 +461,8 @@ onUnmounted(() => {
 }
 
 .next-button:hover:not(:disabled) {
-  background-color: rgba(55, 105, 230, 1);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(71, 125, 255, 0.35);
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 10px 24px rgba(79, 125, 255, 0.35);
 }
 
 .next-button:disabled {
