@@ -283,7 +283,7 @@ const isWardrobeSlotActive = (slot: WardrobeSlot) =>
 
             <div class="inv-area">
                 <div class="achievements-header">
-                    <TwentyText>твой чушпан</TwentyText>
+                    <TwentyText>твой суслик</TwentyText>
                 </div>
                 <div class="dress-layout">
                     <div class="dress-scene">
