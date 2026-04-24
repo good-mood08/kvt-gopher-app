@@ -1,32 +1,30 @@
 <script setup lang="ts">
-defineProps<{
+const props = withDefaults(
+  defineProps<{
+    id: string
+    title: string
+    description?: string | null
+    percent: number
+    /** обложка карты из Strapi (`map.image`) */
+    coverUrl?: string
+  }>(),
+  { description: '', coverUrl: '' },
+)
 
-    /**
-     * id записи карты в базе данных
-     */
-  id: string
-    /**
-     * называние карты
-     */
-  title: string
-    /**
-     * описание карты
-     */
-  description: string
-    /**
-     * процент прохождения по карте
-     */
-  percent: number
-}>()
+const visualStyle = computed(() => {
+  const u = (props.coverUrl ?? '').trim()
+  if (!u) return {}
+  return { backgroundImage: `url(${JSON.stringify(u)})` }
+})
 </script>
 <template>
     <Block class="plot-area-card">
-        <div class="plot-visual">
-            <div class="plot-name-area">
-                <h3 class="plot-title">{{ title }}.<br>волжский</h3>
-                <div class="plot-percent">{{ percent }}%</div>
-            </div>
+        <div class="plot-name-area">
+            <h3 class="plot-title">{{ title }}</h3>
+            <div class="plot-percent">{{ percent }}%</div>
+        </div>
 
+        <div class="plot-visual" :style="visualStyle">
             <ButtonAction class="plot-cta" @click="async() => {await navigateTo(`map/${id}`)}">вперёд!</ButtonAction>
         </div>
 
@@ -38,7 +36,7 @@ defineProps<{
     isolation: isolate;
     display: flex;
     flex-direction: column;
-    width: min(300px, 100%);
+    width: min(340px, 100%);
     max-width: 100%;
     min-height: clamp(220px, 70vw, 280px);
     gap: clamp(10px, 2.8vw, 14px);
@@ -51,24 +49,30 @@ defineProps<{
 .plot-visual {
     position: relative;
     width: 100%;
-    height: clamp(136px, 44vw, 182px);
+    aspect-ratio: 16 / 10;
+    height: auto;
     border-radius: clamp(10px, 3.6vw, 14px);
     overflow: hidden;
     padding: clamp(9px, 3vw, 12px);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
     background-image: url('/images/Frame 182.svg');
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
     flex-shrink: 0;
+}
+
+@supports not (aspect-ratio: 1) {
+    .plot-visual {
+        height: clamp(140px, 52vw, 200px);
+    }
 }
 
 .plot-name-area {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    max-width: 65%;
+    gap: clamp(6px, 1.8vw, 10px);
+    width: 100%;
+    flex-shrink: 0;
 }
 
 .plot-title {
@@ -109,7 +113,7 @@ defineProps<{
 :deep(.plot-cta) {
     position: absolute;
     right: clamp(8px, 2.8vw, 12px);
-    bottom: clamp(8px, 2.8vw, 12px);
+    bottom: clamp(4px, 1.4vw, 6px);
     border-radius: clamp(10px, 3vw, 12px);
     padding: clamp(6px, 2vw, 8px) clamp(14px, 4.8vw, 18px);
     background-color: #477dff;
@@ -125,13 +129,14 @@ defineProps<{
 @media (max-width: 360px) {
     .plot-area-card {
         min-height: 58vw;
-        width: min(75.5vw, 100%);
+        width: min(82vw, 100%);
         padding: 2.5vw;
         gap: 2.2vw;
     }
 
     .plot-visual {
-        height: 35.5vw;
+        aspect-ratio: 16 / 10;
+        height: auto;
         padding: 2.2vw;
     }
 

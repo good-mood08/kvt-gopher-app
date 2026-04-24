@@ -1,0 +1,49 @@
+{
+  "kind": "collectionType",
+  "collectionName": "city_events",
+  "info": {
+    "singularName": "city-event",
+    "pluralName": "city-events",
+    "displayName": "City event",
+    "description": "Guided tours and city activities (EXP booking)"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "scheduleText": {
+      "type": "string",
+      "required": true
+    },
+    "startsAt": {
+      "type": "datetime"
+    },
+    "expCost": {
+      "type": "integer",
+      "default": 0,
+      "min": 0
+    },
+    "city": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::city.city",
+      "inversedBy": "city_events"
+    },
+    "city_event_registrations": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::city-event-registration.city-event-registration",
+      "mappedBy": "city_event"
+    }
+  }
+}

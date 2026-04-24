@@ -82,6 +82,24 @@
       "relation": "oneToMany",
       "target": "api::cloth-user.cloth-user",
       "mappedBy": "users_permissions_user"
+    },
+    "data_user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::data-user.data-user",
+      "inversedBy": "users_permissions_user"
+    },
+    "user_notigications": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::user-notigication.user-notigication",
+      "mappedBy": "users_permissions_user"
+    },
+    "city_event_registrations": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::city-event-registration.city-event-registration",
+      "mappedBy": "users_permissions_user"
     }
   }
 }

@@ -142,19 +142,6 @@ const userAccessWaveTwoFeatureSettings = computed(() => {
   } as any
 })
 
-const userMarkerSettings = computed(() => ({
-  coordinates: userCoordinates.value,
-  title: isUsingGeo.value ? undefined : 'Вы здесь',
-  subtitle: isUsingGeo.value ? undefined : 'Фиксированная точка',
-  draggable: !isUsingGeo.value,
-  onDragMove,
-  onDragEnd,
-  color: 'red',
-  iconName: 'pedestrian',
-  size: isUsingGeo.value ? 'small' : 'normal',
-  staticHint: !isUsingGeo.value,
-}) as any)
-
 const onDragMove = () => {
   syncUserCoordinatesFromMarker()
   triggerRef(defaultMarker);
@@ -164,6 +151,32 @@ const onDragEnd = () => {
   syncUserCoordinatesFromMarker()
   triggerRef(defaultMarker);
 };
+
+function handleFixedUserMarkerClick() {
+  if (isUsingGeo.value) return
+  syncUserCoordinatesFromMarker()
+  const a = Number(userCoordinates.value[0])
+  const b = Number(userCoordinates.value[1])
+  console.info('[Map] фикс-точка: клик', {
+    userCoordinatesPair: [a, b],
+    lat: a,
+    lon: b,
+  })
+}
+
+const userMarkerSettings = computed(() => ({
+  coordinates: userCoordinates.value,
+  title: isUsingGeo.value ? undefined : 'Вы здесь',
+  subtitle: isUsingGeo.value ? undefined : 'Фиксированная точка',
+  draggable: !isUsingGeo.value,
+  onDragMove,
+  onDragEnd,
+  ...(!isUsingGeo.value ? { onClick: handleFixedUserMarkerClick } : {}),
+  color: 'red',
+  iconName: 'pedestrian',
+  size: isUsingGeo.value ? 'small' : 'normal',
+  staticHint: !isUsingGeo.value,
+}) as any)
 
 const showPopup = () => {
   isPopupVisible.value = true;

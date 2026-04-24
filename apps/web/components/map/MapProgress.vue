@@ -1,19 +1,31 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { ProgressIndicator, ProgressRoot } from 'radix-vue'
 
-const progressValue = ref(0)
+function clampProgress(p: unknown): number {
+  const n = Number(p)
+  if (!Number.isFinite(n)) return 0
+  return Math.min(100, Math.max(0, n))
+}
+
 const props = defineProps<{
-  /**
-   * прогресс по карте
-   */
-    progress: number,
-    
-  
-  }>()
+  /** прогресс по карте, 0–100 */
+  progress: number
+}>()
+
+const progressValue = ref(clampProgress(props.progress))
+
+watch(
+  () => props.progress,
+  (p) => {
+    progressValue.value = clampProgress(p)
+  },
+)
 
 onMounted(() => {
-  const timer = setTimeout(() => (progressValue.value = props.progress), 500)
+  const timer = setTimeout(() => {
+    progressValue.value = clampProgress(props.progress)
+  }, 500)
   return () => clearTimeout(timer)
 })
 </script>
@@ -26,7 +38,7 @@ onMounted(() => {
   >
     <ProgressIndicator
       class="ProgressIndicator"
-      :style="`transform: translateX(-${100 - progressValue}%)`"
+      :style="`transform: translateX(-${100 - clampProgress(progressValue)}%)`"
     />
   </ProgressRoot>
 </template>

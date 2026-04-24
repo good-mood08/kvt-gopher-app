@@ -3,10 +3,70 @@ import { ArrowLeft } from 'lucide-vue-next'
 import { getData } from '~/composables/useLocalStore'
 
 type RatingItem = {
+  userDocumentId: string
   place: number
   name: string
   percent: number
   isCurrentUser: boolean
+  completedCount: number
+  totalLocations: number
+  suslikUrl: string
+  exp: number
+}
+
+const FALLBACK_SUSLIK = '/images/suslo.svg'
+
+const DATA_USER_POPULATE = {
+  cloth_user: {
+    populate: {
+      cloth: { populate: { data: true, sislik: true } },
+    },
+  },
+} as const
+
+function suslikFromDataUserRow(row: Record<string, unknown> | null | undefined): {
+  suslikUrl: string
+  exp: number
+} {
+  if (!row) return { suslikUrl: FALLBACK_SUSLIK, exp: 0 }
+  const cloth = (row.cloth_user as Record<string, unknown> | undefined)?.cloth as
+    | Record<string, unknown>
+    | undefined
+  const sislikUrl = useStrapiMediaUrlFirst(cloth?.sislik)
+  const dataUrl = useStrapiMediaUrl(cloth?.data)
+  const suslikUrl = sislikUrl || dataUrl || FALLBACK_SUSLIK
+  return { suslikUrl, exp: Number(row.exp ?? 0) }
+}
+
+type StrapiFind = (collection: string, options?: Record<string, unknown>) => Promise<{ data?: unknown[] }>
+
+async function fetchDataUserExtrasByUserIds(
+  findFn: StrapiFind,
+  userIds: string[],
+): Promise<Map<string, { suslikUrl: string, exp: number }>> {
+  const map = new Map<string, { suslikUrl: string, exp: number }>()
+  const unique = [...new Set(userIds.filter(Boolean))]
+  const chunk = 8
+  for (let i = 0; i < unique.length; i += chunk) {
+    const slice = unique.slice(i, i + chunk)
+    await Promise.all(
+      slice.map(async (uid) => {
+        try {
+          const res = await findFn('data-users', {
+            filters: { users_permissions_user: { documentId: { $eq: uid } } },
+            populate: DATA_USER_POPULATE,
+            pagination: { pageSize: 1 },
+          })
+          const row = (res?.data?.[0] ?? null) as Record<string, unknown> | null
+          map.set(uid, suslikFromDataUserRow(row))
+        }
+        catch {
+          map.set(uid, { suslikUrl: FALLBACK_SUSLIK, exp: 0 })
+        }
+      }),
+    )
+  }
+  return map
 }
 
 const { find } = useStrapi()
@@ -142,18 +202,27 @@ const loadRating = async () => {
       })
     }
 
+    const userIdsForExtras = Array.from(usersProgress.keys())
+    const extrasByUser = await fetchDataUserExtrasByUserIds(find, userIdsForExtras)
+
     ratingItems.value = Array.from(usersProgress.entries())
       .map(([userId, userProgress]) => {
         const completedLocations = userProgress.locations.size
         const percent = totalLocations > 0
           ? Math.round((completedLocations / totalLocations) * 100)
           : 0
+        const extra = extrasByUser.get(userId) ?? { suslikUrl: FALLBACK_SUSLIK, exp: 0 }
 
         return {
+          userDocumentId: userId,
           place: 0,
           name: userProgress.name,
           percent,
           isCurrentUser: currentUserId === userId,
+          completedCount: completedLocations,
+          totalLocations,
+          suslikUrl: extra.suslikUrl,
+          exp: extra.exp,
         }
       })
       .sort((left, right) => right.percent - left.percent || left.name.localeCompare(right.name, 'ru'))
@@ -190,7 +259,6 @@ onMounted(() => {
         <ArrowLeft :stroke-width="2" class="back-icon" />
       </button>
       <TwentyText class="header-title">рейтинг</TwentyText>
-      <div class="header-space" aria-hidden="true" />
     </header>
 
     <div class="rating-head">
@@ -212,11 +280,15 @@ onMounted(() => {
     <div v-else class="rating-list">
       <RatingBlock
         v-for="item in ratingItems"
-        :key="`${item.name}-${item.place}`"
+        :key="item.userDocumentId"
         :place="item.place"
         :name="item.name"
         :percent="item.percent"
         :is-current-user="item.isCurrentUser"
+        :suslik-url="item.suslikUrl"
+        :exp="item.exp"
+        :completed-count="item.completedCount"
+        :total-locations="item.totalLocations"
       />
     </div>
 
@@ -235,22 +307,25 @@ onMounted(() => {
 }
 
 .rating-header {
-  display: grid;
-  grid-template-columns: 40px 1fr 40px;
+  position: relative;
+  display: flex;
   align-items: center;
-  gap: 10px;
+  min-height: 40px;
 }
 
 .header-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   text-align: center;
-}
-
-.header-space {
-  width: 40px;
-  height: 40px;
+  pointer-events: none;
+  width: max-content;
+  max-width: calc(100% - 100px);
 }
 
 .back-btn {
+  position: relative;
+  z-index: 1;
   width: 40px;
   height: 40px;
   border-radius: 12px;

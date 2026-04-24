@@ -17,6 +17,12 @@
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::map.map"
+    },
+    "city_events": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::city-event.city-event",
+      "mappedBy": "city"
     }
   }
 }

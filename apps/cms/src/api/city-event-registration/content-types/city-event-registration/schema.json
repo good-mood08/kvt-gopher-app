@@ -1,0 +1,32 @@
+{
+  "kind": "collectionType",
+  "collectionName": "city_event_registrations",
+  "info": {
+    "singularName": "city-event-registration",
+    "pluralName": "city-event-registrations",
+    "displayName": "City event registration",
+    "description": "User signup for a city event (EXP)"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "expPaid": {
+      "type": "integer",
+      "default": 0,
+      "min": 0
+    },
+    "city_event": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::city-event.city-event",
+      "inversedBy": "city_event_registrations"
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "city_event_registrations"
+    }
+  }
+}

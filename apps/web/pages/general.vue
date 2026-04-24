@@ -131,7 +131,7 @@ onActivated(() => {
  
     <div class="main" :style="{ '--header-offset': `${headerHeight}px` }">
         <div ref="headerRef">
-          <TheHeader :username="name "  @click="async() => await navigateTo('/profile')"/>
+          <TheHeader :username="name" @click="async() => await navigateTo('/profile')"/>
         </div>
         <div class="display" :style="{ paddingBottom: contentBottomPadding }">
         <div class="right-ornaments" aria-hidden="true">

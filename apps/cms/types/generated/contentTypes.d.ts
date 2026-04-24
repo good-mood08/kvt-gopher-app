@@ -403,6 +403,97 @@ export interface ApiAchievementAchievement extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiCityEventRegistrationCityEventRegistration
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'city_event_registrations';
+  info: {
+    description: 'User signup for a city event (EXP)';
+    displayName: 'City event registration';
+    pluralName: 'city-event-registrations';
+    singularName: 'city-event-registration';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    city_event: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::city-event.city-event'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    expPaid: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::city-event-registration.city-event-registration'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    users_permissions_user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
+export interface ApiCityEventCityEvent extends Struct.CollectionTypeSchema {
+  collectionName: 'city_events';
+  info: {
+    description: 'Guided tours and city activities (EXP booking)';
+    displayName: 'City event';
+    pluralName: 'city-events';
+    singularName: 'city-event';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    city: Schema.Attribute.Relation<'manyToOne', 'api::city.city'>;
+    city_event_registrations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::city-event-registration.city-event-registration'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Text;
+    expCost: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::city-event.city-event'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    scheduleText: Schema.Attribute.String & Schema.Attribute.Required;
+    slug: Schema.Attribute.String;
+    startsAt: Schema.Attribute.DateTime;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiCityCity extends Struct.CollectionTypeSchema {
   collectionName: 'cities';
   info: {
@@ -414,6 +505,10 @@ export interface ApiCityCity extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   attributes: {
+    city_events: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::city-event.city-event'
+    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -445,6 +540,10 @@ export interface ApiClothUserClothUser extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    data_user: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::data-user.data-user'
+    >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -508,7 +607,7 @@ export interface ApiDataUserDataUser extends Struct.CollectionTypeSchema {
     singularName: 'data-user';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     cloth_user: Schema.Attribute.Relation<
@@ -777,13 +876,8 @@ export interface ApiSpeakerSpeaker extends Struct.CollectionTypeSchema {
       'api::speaker.speaker'
     > &
       Schema.Attribute.Private;
-    map_story: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::map-story.map-story'
-    >;
     name: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
-    stories: Schema.Attribute.Relation<'manyToMany', 'api::story.story'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -813,7 +907,7 @@ export interface ApiStoryStory extends Struct.CollectionTypeSchema {
     name: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     speaker: Schema.Attribute.Relation<'oneToOne', 'api::speaker.speaker'>;
-    speakers: Schema.Attribute.Relation<'manyToMany', 'api::speaker.speaker'>;
+    speakers: Schema.Attribute.Relation<'oneToMany', 'api::speaker.speaker'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -963,7 +1057,7 @@ export interface ApiUserNotigicationUserNotigication
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     users_permissions_user: Schema.Attribute.Relation<
-      'oneToOne',
+      'manyToOne',
       'plugin::users-permissions.user'
     >;
   };
@@ -1428,6 +1522,10 @@ export interface PluginUsersPermissionsUser
   };
   attributes: {
     blocked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    city_event_registrations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::city-event-registration.city-event-registration'
+    >;
     cloth_users: Schema.Attribute.Relation<
       'oneToMany',
       'api::cloth-user.cloth-user'
@@ -1437,6 +1535,10 @@ export interface PluginUsersPermissionsUser
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    data_user: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::data-user.data-user'
+    >;
     email: Schema.Attribute.Email &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMaxLength<{
@@ -1471,6 +1573,10 @@ export interface PluginUsersPermissionsUser
       'oneToMany',
       'api::user-map-story.user-map-story'
     >;
+    user_notigications: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::user-notigication.user-notigication'
+    >;
     username: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique &
@@ -1491,6 +1597,8 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::achievement.achievement': ApiAchievementAchievement;
+      'api::city-event-registration.city-event-registration': ApiCityEventRegistrationCityEventRegistration;
+      'api::city-event.city-event': ApiCityEventCityEvent;
       'api::city.city': ApiCityCity;
       'api::cloth-user.cloth-user': ApiClothUserClothUser;
       'api::cloth.cloth': ApiClothCloth;

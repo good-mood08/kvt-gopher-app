@@ -24,18 +24,6 @@
     },
     "name": {
       "type": "string"
-    },
-    "map_story": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::map-story.map-story",
-      "inversedBy": "speakers"
-    },
-    "stories": {
-      "type": "relation",
-      "relation": "manyToMany",
-      "target": "api::story.story",
-      "inversedBy": "speakers"
     }
   }
 }

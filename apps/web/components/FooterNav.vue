@@ -7,7 +7,7 @@ const activeTab = ref('главная')
 const getTabByPath = (path: string) => {
   if (path.startsWith('/shop')) return 'магазин'
   if (path.startsWith('/rating')) return 'рейтинг'
-  if (path.startsWith('/profile')) return 'профиль'
+  if (path.startsWith('/profile') || path.startsWith('/achivments')) return 'профиль'
   return 'главная'
 }
 
