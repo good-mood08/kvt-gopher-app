@@ -2,6 +2,8 @@
 const { params } = useRoute()
 const { findOne, find, create } = useStrapi()
 const { fetchUser } = useStrapiAuth()
+const { addExp } = usePlayerDataUser()
+const { pushUserNotification } = usePushUserNotification()
 
 const locationId = params.id as string
 const location = await findOne('locations', locationId, { populate: ['map', 'game'] })
@@ -37,6 +39,18 @@ function normalizeCards(payload: unknown): TestCard[] {
     .filter((card): card is TestCard => card !== null)
 }
 
+/** Fisher–Yates: новый массив в случайном порядке (при каждом старте игры). */
+function shuffleCards(cards: TestCard[]): TestCard[] {
+  const out = [...cards]
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const tmp = out[i]!
+    out[i] = out[j]!
+    out[j] = tmp
+  }
+  return out
+}
+
 const gameEntity = (location as any)?.data?.game
 const rawGameData =
   gameEntity?.data?.data
@@ -46,7 +60,7 @@ const rawGameData =
   ?? gameEntity?.data
   ?? null
 
-const testCards = ref<TestCard[]>(normalizeCards(rawGameData))
+const testCards = ref<TestCard[]>(shuffleCards(normalizeCards(rawGameData)))
 if (!testCards.value.length) {
   console.warn('[locationGame] game.data is empty or invalid for location', { locationId, rawGameData })
 }
@@ -68,7 +82,13 @@ const pickedAnswer = ref<boolean | null>(null)
 const pickedAnswerCorrect = ref<boolean | null>(null)
 const revealStage = ref<'idle' | 'picked' | 'fact'>('idle')
 const correctCount = ref(0)
-const completionState = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
+const completionState = ref<
+  'idle' | 'saving' | 'saved_new' | 'saved_repeat' | 'failed' | 'error'
+>('idle')
+
+function completionDoneOk(state: string) {
+  return state === 'saved_new' || state === 'saved_repeat'
+}
 const factEntering = ref(false)
 const factEnterSide = ref<1 | -1>(1)
 const finalEntering = ref(false)
@@ -163,11 +183,32 @@ const answerFlareClass = computed(() => {
   return pickedAnswerCorrect.value ? 'flare-correct' : 'flare-wrong'
 })
 
+/** Строго больше половины вопросов отвечено верно — тогда EXP и запись о прохождении. */
+function quizPassedThreshold(): boolean {
+  const total = testCards.value.length
+  return total > 0 && correctCount.value > total / 2
+}
+
 const completionHint = computed(() => {
   if (completionState.value === 'saving') return 'Фиксируем прохождение...'
-  if (completionState.value === 'saved') return 'Точка закрыта и прогресс сохранён'
+  if (completionState.value === 'saved_new') {
+    return 'Прогресс записан, +50 EXP на счёт. Можно закрыть точку.'
+  }
+  if (completionState.value === 'saved_repeat') {
+    return 'Ты уже проходил эту точку — награды нет, это тренировка. Закрой точку, когда будешь готов.'
+  }
+  if (completionState.value === 'failed') {
+    return `Нужно больше половины верных ответов (${correctCount.value} из ${testCards.value.length}). Попробуй ещё раз или закрой точку без зачёта.`
+  }
   if (completionState.value === 'error') return 'Не удалось сохранить. Нажми «Закрыть точку» ещё раз.'
   return 'Готово к закрытию точки'
+})
+
+const finalTitle = computed(() => {
+  if (completionState.value === 'failed') return 'Раунд завершён'
+  if (completionState.value === 'saved_new') return 'Победа!'
+  if (completionState.value === 'saved_repeat') return 'Уже проходил'
+  return 'Конец раунда'
 })
 
 function onCardPointerDown(event: PointerEvent) {
@@ -244,6 +285,7 @@ function handleFactSwipe(toRight: boolean) {
 }
 
 function restartQuiz() {
+  testCards.value = shuffleCards(normalizeCards(rawGameData))
   currentIndex.value = 0
   correctCount.value = 0
   completionState.value = 'idle'
@@ -266,10 +308,25 @@ function resetToQuestion() {
 }
 
 async function persistLocationProgress() {
-  if (completionState.value === 'saving' || completionState.value === 'saved') return
+  if (completionState.value === 'saving' || completionDoneOk(completionState.value)) return
 
   completionState.value = 'saving'
-  console.info('[locationGame] persist start', { locationId, phase: phase.value, completionState: completionState.value })
+  console.info('[locationGame] persist start', {
+    locationId,
+    correctCount: correctCount.value,
+    total: testCards.value.length,
+    passed: quizPassedThreshold(),
+  })
+
+  if (!quizPassedThreshold()) {
+    completionState.value = 'failed'
+    console.info('[locationGame] порог не пройден — прогресс и EXP не выдаём', {
+      correctCount: correctCount.value,
+      total: testCards.value.length,
+    })
+    return
+  }
+
   try {
     const user = await fetchUser()
     const userId = user.value?.documentId
@@ -290,16 +347,30 @@ async function persistLocationProgress() {
         location: locationId,
       })
       console.info('[locationGame] progress record created', { userId, locationId })
+      try {
+        await addExp(50)
+      }
+      catch (expErr) {
+        console.error('[locationGame] начисление EXP за прохождение с порогом', expErr)
+      }
+      await pushUserNotification({
+        text: `Локация «${locationName.value}» пройдена.`,
+        type: 'success',
+        category: 'system',
+      })
     } else {
-      console.info('[locationGame] progress already exists, skip create', {
+      console.info('[locationGame] progress already exists, skip create and EXP', {
         userId,
         locationId,
         existingCount: existing.data.length,
       })
+      completionState.value = 'saved_repeat'
+      console.info('[locationGame] persist repeat visit', { locationId })
+      return
     }
 
-    completionState.value = 'saved'
-    console.info('[locationGame] persist success', { locationId, completionState: completionState.value })
+    completionState.value = 'saved_new'
+    console.info('[locationGame] persist success (first clear)', { locationId, completionState: completionState.value })
   } catch (error) {
     console.error('Ошибка при сохранении прохождения локации:', error)
     completionState.value = 'error'
@@ -308,10 +379,10 @@ async function persistLocationProgress() {
 }
 
 async function closePoint() {
-  if (completionState.value !== 'saved') {
+  if (!completionDoneOk(completionState.value) && completionState.value !== 'failed') {
     await persistLocationProgress()
   }
-  if (completionState.value !== 'saved') return
+  if (!completionDoneOk(completionState.value) && completionState.value !== 'failed') return
 
   if (mapId.value) {
     await navigateTo(`/map/${mapId.value}`)
@@ -405,7 +476,23 @@ watch(quizFinished, (finished) => {
       </template>
 
       <template v-else>
-        <div v-if="testCards.length" class="swipe-area final-area mood-truth-locked">
+        <div
+          v-if="testCards.length"
+          class="swipe-area final-area mood-truth-locked"
+          :class="{ 'final-area--celebrate': completionState === 'saved_new' }"
+        >
+          <div v-if="completionState === 'saved_new'" class="win-fx" aria-hidden="true">
+            <span
+              v-for="n in 22"
+              :key="n"
+              class="win-confetti"
+              :style="{
+                left: `${(n * 37) % 88 + 6}%`,
+                animationDelay: `${n * 0.045}s`,
+                background: `hsl(${(n * 31) % 360}, 78%, ${52 + (n % 3) * 6}%)`,
+              }"
+            />
+          </div>
           <div class="backdrop-mood" aria-hidden="true">
             <div class="mood-orb mood-orb-a" />
             <div class="mood-orb mood-orb-b" />
@@ -413,20 +500,25 @@ watch(quizFinished, (finished) => {
             <div class="mood-arc" />
             <div class="mood-rings" />
           </div>
-          <article
-            class="fact-card final-card glow-fact"
-            :class="{ 'final-entering': finalEntering }"
-            :style="finalCardStyle"
+          <div
+            class="final-card-wrap"
+            :class="{ 'final-card-wrap--won': completionState === 'saved_new' }"
           >
-            <p class="card-top-label">Конец раунда</p>
-            <p class="main-text">Точка пройдена</p>
-            <div class="final-actions">
-              <button class="final-btn primary" :disabled="completionState === 'saving'" @click="closePoint">
-                {{ completionState === 'saving' ? 'Сохраняем...' : 'Закрыть точку' }}
-              </button>
-              <button class="final-btn" @click="restartQuiz">Пройти ещё раз</button>
-            </div>
-          </article>
+            <article
+              class="fact-card final-card glow-fact"
+              :class="{ 'final-entering': finalEntering }"
+              :style="finalCardStyle"
+            >
+              <p class="card-top-label">Конец раунда</p>
+              <p class="main-text final-main-title">{{ finalTitle }}</p>
+              <div class="final-actions">
+                <button class="final-btn primary" :disabled="completionState === 'saving'" @click="closePoint">
+                  {{ completionState === 'saving' ? 'Сохраняем...' : 'Закрыть точку' }}
+                </button>
+                <button class="final-btn" @click="restartQuiz">Пройти ещё раз</button>
+              </div>
+            </article>
+          </div>
         </div>
         <template v-if="testCards.length">
           <div class="choice-feedback final-feedback">{{ completionHint }}</div>
@@ -1053,8 +1145,135 @@ watch(quizFinished, (finished) => {
   }
 }
 
+.final-area {
+  position: relative;
+}
+
 .final-area .fact-card {
   z-index: 2;
+}
+
+.final-area--celebrate {
+  overflow: visible;
+}
+
+.final-area--celebrate::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: min(300px, 88vw);
+  height: min(300px, 88vw);
+  transform: translate(-50%, -50%) scale(0.4);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(52, 211, 153, 0.5) 0%, rgba(99, 102, 241, 0.22) 45%, transparent 70%);
+  animation: win-aura 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+}
+
+@keyframes win-aura {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.35);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.25);
+  }
+}
+
+.win-fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Поверх финальной карточки; клики проходят к кнопкам */
+  z-index: 20;
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+.final-area--celebrate .backdrop-mood {
+  z-index: 0;
+}
+
+.final-card-wrap {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.final-card-wrap--won {
+  animation: win-wrap-pop 0.95s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes win-wrap-pop {
+  0% {
+    transform: scale(0.88);
+    filter: saturate(0.92);
+  }
+  55% {
+    transform: scale(1.06);
+    filter: saturate(1.12);
+  }
+  100% {
+    transform: scale(1);
+    filter: saturate(1);
+  }
+}
+
+.win-confetti {
+  position: absolute;
+  top: -18px;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+  animation: win-confetti-fall 2s ease-out forwards;
+}
+
+@keyframes win-confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  100% {
+    opacity: 0.82;
+    transform: translateY(500px) rotate(640deg) scale(0.72);
+  }
+}
+
+.final-main-title {
+  transition: color 0.3s ease;
+}
+
+.final-area--celebrate .final-main-title {
+  background: linear-gradient(100deg, #059669 0%, #2563eb 45%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: win-title-reveal 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes win-title-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
 }
 
 .final-card {

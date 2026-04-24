@@ -25,7 +25,7 @@
           <div v-for="(message, index) in visibleMessages" :key="index" class="message-container">
             <ChatMessage
               :author="getAuthor(message.authorId).name"
-              :message="message.text"
+              :message="message.text ?? ''"
               :is-current-user="getAuthor(message.authorId).name === currentUser"
               :avatar="getAuthor(message.authorId).avatar"
               :image="message.image"
@@ -35,14 +35,28 @@
           </div>
         </div>
 
+        <div v-if="currentOptions.length > 0" class="options-container">
+          <TwentyText class="options-title">Выберите ответ</TwentyText>
+          <button
+            v-for="(option, index) in currentOptions"
+            :key="index"
+            type="button"
+            class="option-button"
+            @click="selectOption(option)"
+          >
+            <TwelveText>{{ option.text }}</TwelveText>
+          </button>
+        </div>
+
         <div class="next-message-container">
           <TwentyText v-if="footerHint" class="chat-footer-hint">{{ footerHint }}</TwentyText>
           <div v-else class="chat-footer-spacer" aria-hidden="true" />
           <button
+            v-show="currentOptions.length === 0"
             type="button"
             class="next-button"
             @click="handleNextButtonClick"
-            :disabled="!isFinished && currentMessageIndex >= storyMessages.length"
+            :disabled="!isFinished && currentMessageIndex >= currentStory.length"
           >
             <TwentyText class="button-action-text">{{ isFinished ? 'Закрыть' : 'Дальше' }}</TwentyText>
           </button>
@@ -119,8 +133,49 @@ const isFinished = ref(false)
 
 const visibleMessages = ref([])
 const currentMessageIndex = ref(0)
+const currentStory = ref([])
+const currentOptions = ref([])
 const selectedImage = ref(null)
 const messagesRoot = ref(null)
+
+/** Полный сюжет с ветками из `story.content` (объект API, JSON или JS-литерал из админки). */
+function getStoryBranches() {
+  return parseStoryBranchesContent(props.story?.content)
+}
+
+function resetStorySession() {
+  const b = getStoryBranches()
+  currentStory.value = Array.isArray(b.main) ? b.main : []
+  currentMessageIndex.value = 0
+  currentOptions.value = []
+  visibleMessages.value = []
+  isFinished.value = false
+}
+
+const updateIsFinished = () => {
+  const done =
+    currentMessageIndex.value >= currentStory.value.length && currentOptions.value.length === 0
+  isFinished.value = done
+  if (done) {
+    hasSeenDialog.value = true
+  }
+}
+
+/** Уже просмотрено: показываем только ветку main целиком (путь ветвления в БД не хранится). */
+function replaySeenStory() {
+  const b = getStoryBranches()
+  const main = Array.isArray(b.main) ? b.main : []
+  visibleMessages.value = [...main]
+  currentStory.value = main
+  currentMessageIndex.value = main.length
+  currentOptions.value = []
+  if (main.length) {
+    isFinished.value = true
+  } else {
+    updateIsFinished()
+  }
+  nextTick(() => scrollToBottom())
+}
 
 
 watch(isFinished, async(newValue) => {
@@ -160,7 +215,9 @@ const authorsList = computed(() => props.speakers.map((speaker) => ({
 })))
 
 const getAuthor = (authorId) => {
-  return authorsList.value.find(author => author.name.toLocaleLowerCase() === authorId.toLocaleLowerCase()) || authorsList.value[0]
+  if (authorId == null || authorId === '') return authorsList.value[0]
+  const id = String(authorId).toLowerCase()
+  return authorsList.value.find(author => author.name.toLocaleLowerCase() === id) || authorsList.value[0]
 }
 
 /** Только текст для TTS — персонажи различаются голосами (public.ttsYandexVoice*) */
@@ -177,17 +234,14 @@ const getVoiceForMessage = (message) => {
   return a === me ? pub.ttsYandexVoicePlayer : pub.ttsYandexVoiceNpc
 }
 
-const storyMessages = computed(() => {
-  const storyData = new Function(`return ${props.story.content}`)()
-  return storyData.main || []
-})
-
 const footerHint = computed(() => {
+  if (currentOptions.value.length > 0) {
+    return 'Выберите один из вариантов — после выбора пойдёт выбранная ветка сюжета'
+  }
   if (hasSeenDialog.value || isFinished.value) return ''
-  const total = storyMessages.value.length
+  const total = currentStory.value.length
   if (total === 0) return ''
-  const shown = visibleMessages.value.length
-  return `Реплика ${shown} из ${total} · нажмите «Дальше», когда будете готовы`
+  return `Реплика ${currentMessageIndex.value} из ${total} · нажмите «Дальше», когда будете готовы`
 })
 
 const scrollToBottom = () => {
@@ -200,16 +254,42 @@ const scrollToBottom = () => {
 }
 
 const showNextMessage = () => {
-  if (currentMessageIndex.value < storyMessages.value.length) {
-    const message = storyMessages.value[currentMessageIndex.value]
+  if (currentMessageIndex.value < currentStory.value.length) {
+    const message = currentStory.value[currentMessageIndex.value]
     visibleMessages.value.push(message)
+
+    if (message.options && Array.isArray(message.options) && message.options.length > 0) {
+      currentOptions.value = message.options
+    } else {
+      currentOptions.value = []
+    }
+
     currentMessageIndex.value++
     scrollToBottom()
+    updateIsFinished()
+  }
+}
 
-    if (currentMessageIndex.value >= storyMessages.value.length) {
-      isFinished.value = true
-      hasSeenDialog.value = true
-    }
+const selectOption = (option) => {
+  beforeManualStoryAdvance()
+  currentOptions.value = []
+  const choiceText = typeof option?.text === 'string' ? option.text.trim() : ''
+  if (choiceText) {
+    visibleMessages.value.push({
+      authorId: props.currentUser,
+      text: choiceText,
+    })
+    scrollToBottom()
+  }
+  const b = getStoryBranches()
+  const branchKey = option?.branch != null ? String(option.branch) : ''
+  const nextBranch = branchKey ? b[branchKey] : null
+  currentStory.value = Array.isArray(nextBranch) ? nextBranch : []
+  currentMessageIndex.value = 0
+  isFinished.value = false
+  updateIsFinished()
+  if (!isFinished.value) {
+    showNextMessage()
   }
 }
 
@@ -228,11 +308,12 @@ const {
   onTtsError: (msg) => {
     alert(typeof msg === 'string' ? msg : 'Не удалось получить озвучку')
   },
-  getCurrentOptions: () => [],
+  getCurrentOptions: () => currentOptions.value,
   canAdvanceStory: () =>
     !hasSeenDialog.value
     && !isFinished.value
-    && currentMessageIndex.value < storyMessages.value.length,
+    && currentOptions.value.length === 0
+    && currentMessageIndex.value < currentStory.value.length,
   advanceStory: () => {
     showNextMessage()
   },
@@ -271,16 +352,14 @@ watch(() => props.isOpen, (newValue) => {
     disableTtsAuto()
     document.body.style.overflow = 'hidden'
     if (!hasSeenDialog.value) {
-      visibleMessages.value = []
-      currentMessageIndex.value = 0
-      isFinished.value = false
-      showNextMessage()
-    } else {
-      if (visibleMessages.value.length === 0) {
-        while (currentMessageIndex.value < storyMessages.value.length) {
-          showNextMessage()
-        }
+      resetStorySession()
+      if (currentStory.value.length > 0) {
+        showNextMessage()
+      } else {
+        updateIsFinished()
       }
+    } else if (visibleMessages.value.length === 0) {
+      replaySeenStory()
     }
   } else {
     document.body.style.overflow = 'auto'
@@ -421,6 +500,47 @@ onUnmounted(() => {
 .messages-container::-webkit-scrollbar-thumb {
   background: #d1d5db;
   border-radius: 2px;
+}
+
+.options-container {
+  padding: 0 1rem 0.75rem;
+  animation: story-slide-up 0.4s ease-out;
+}
+
+.options-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.65rem;
+}
+
+.option-button {
+  width: 100%;
+  padding: 0.75rem;
+  text-align: left;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.95));
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.option-button:hover {
+  background: linear-gradient(180deg, #fff, rgba(236, 242, 255, 1));
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+}
+
+@keyframes story-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .next-message-container {

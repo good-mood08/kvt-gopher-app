@@ -207,9 +207,15 @@ async function buyCloth(documentId: string) {
       await refreshShop()
       return
     }
-    await create('cloth-users', {
+    const created = await create('cloth-users', {
       cloth: documentId,
       users_permissions_user: userId,
+    })
+    const row = (created as { data?: { documentId?: string } })?.data
+    console.info('[kvt] магазин: костюм добавлен в коллекцию', {
+      clothDocumentId: documentId,
+      clothUserDocumentId: row?.documentId,
+      userId,
     })
     await refreshShop()
   }
@@ -243,7 +249,7 @@ async function buyCloth(documentId: string) {
       <section v-else class="catalog">
         <article v-for="item in shopItems" :key="item.id" class="item-card" :class="{ 'item-card--owned': item.owned }">
           <span v-if="item.owned" class="item-ribbon" aria-hidden="true">в коллекции</span>
-          <div class="item-visual">
+          <div class="item-visual" :class="{ 'item-visual--owned': item.owned }">
             <img :src="item.image" :alt="item.title" class="item-image">
           </div>
 
@@ -411,6 +417,11 @@ async function buyCloth(documentId: string) {
   background: radial-gradient(circle at 30% 20%, #fef3c7 0%, #f3f4f6 52%, #e5e7eb 100%);
   border: 1px solid #e5e7eb;
   padding: 10px;
+}
+
+.item-visual--owned {
+  background: radial-gradient(circle at 28% 18%, #e0e7ff 0%, #eef2ff 42%, #e5e7eb 100%);
+  border-color: #c7d2fe;
 }
 
 .item-image {

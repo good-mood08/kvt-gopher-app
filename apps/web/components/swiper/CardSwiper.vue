@@ -12,7 +12,9 @@ const props = defineProps<{
 const { find, findOne } = useStrapi()
 const { fetchUser } = useStrapiAuth()
 
-const city = await findOne('cities', props.id, { populate: { maps: { populate: ['locations'] }} })
+const city = await findOne('cities', props.id, {
+  populate: { maps: { populate: ['locations', 'image'] } },
+})
 const progressValues = ref<Record<string, number>>({})
 
 onMounted(async () => {
@@ -27,9 +29,10 @@ onMounted(async () => {
         location: { map: { documentId: map.documentId } }
       }
     })
-    progressValues.value[map.id] = Math.round(
-      (progresses.data.length / mapData.data.locations.length) * 100
-    )
+    const total = mapData?.data?.locations?.length ?? 0
+    const done = progresses?.data?.length ?? 0
+    progressValues.value[map.id] =
+      total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0
   }
 })
 
@@ -87,10 +90,11 @@ const onSwiper = (swiper: any) => {
         @swiper="onSwiper"
       >
         <swiper-slide v-for="map in city.data.maps" :key="map.id" class="plot-slide">
-          <Plots 
+          <Plots
             :id="map.documentId"
             :title="map.name"
-            :description="map.description"
+            :description="map.description ?? ''"
+            :cover-url="useStrapiMediaUrl(map.image)"
             :percent="progressValues[map.id] || 0"
           />
         </swiper-slide>
@@ -117,7 +121,7 @@ const onSwiper = (swiper: any) => {
 }
 
 .plot-slide {
-  width: min(300px, 100%) !important;
+  width: min(340px, 100%) !important;
   transition: transform 0.25s ease, opacity 0.25s ease;
   transform: scale(0.94);
   transform-origin: left center;
@@ -146,13 +150,13 @@ const onSwiper = (swiper: any) => {
   }
   
   .plot-slide {
-    width: min(80vw, 100%) !important;
+    width: min(86vw, 100%) !important;
   }
 }
 
 @media (max-width: 380px) {
   .plot-slide {
-    width: min(75.5vw, 100%) !important;
+    width: min(82vw, 100%) !important;
   }
 }
 </style>

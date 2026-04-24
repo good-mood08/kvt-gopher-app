@@ -33,9 +33,9 @@
     },
   })
 
-  const compled = progresses.data.length
-  const all = mapData.data.locations.length
-  const progress = (compled / all)*100
+  const compled = progresses?.data?.length ?? 0
+  const all = mapData?.data?.locations?.length ?? 0
+  const progress = all > 0 ? Math.min(100, Math.round((compled / all) * 100)) : 0
   const completedLocationIds = progresses.data
     .map(item => item.location?.documentId)
     .filter((id): id is string => typeof id === 'string' && id.length > 0)

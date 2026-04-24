@@ -175,12 +175,12 @@ const markerSettings = computed(() => ({
           <TwelveText v-if="props.name" class="title">{{ props.name }}</TwelveText>
           <TenText v-if="props.description" class="description">{{ props.description }}</TenText>
           
-          <button 
-            v-if="is_range(250)" 
+          <button
+            v-if="props.completed || is_range(250)"
             class="select-button"
             @click.stop="emit('select')"
           >
-            Выбрать место
+            {{ props.completed && !is_range(250) ? 'Пройти снова' : 'Выбрать место' }}
           </button>
         </div>
       </div>

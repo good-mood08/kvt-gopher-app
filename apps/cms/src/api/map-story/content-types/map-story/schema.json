@@ -37,8 +37,7 @@
     "speakers": {
       "type": "relation",
       "relation": "oneToMany",
-      "target": "api::speaker.speaker",
-      "mappedBy": "map_story"
+      "target": "api::speaker.speaker"
     }
   }
 }

@@ -121,7 +121,7 @@ const handleItemClick = (city, index) => {
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  border-radius: 12px;
+  border-radius: 30px;
   padding: 14px 18px;
   gap: 8px;
   background-color: white;

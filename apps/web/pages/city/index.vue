@@ -1,54 +1,246 @@
 <script setup lang="ts">
-import { ArrowLeft, CalendarDays } from 'lucide-vue-next'
-import { getData, setData } from '~/composables/useLocalStore'
+import { ArrowLeft, CalendarDays, ChevronDown } from 'lucide-vue-next'
+import { getData } from '~/composables/useLocalStore'
 
-const { findOne } = useStrapi()
+type CityEventRow = {
+  documentId: string
+  slug: string | null
+  title: string
+  scheduleText: string
+  description: string | null
+  expCost: number
+}
+
+/** Только поля из Strapi (REST v5, camelCase); без подстановок с клиента. */
+function normalizeCityEvent(raw: Record<string, unknown>): CityEventRow | null {
+  const documentId = raw.documentId != null ? String(raw.documentId) : ''
+  if (!documentId)
+    return null
+  const title = typeof raw.title === 'string' ? raw.title.trim() : ''
+  if (!title)
+    return null
+  const scheduleText = typeof raw.scheduleText === 'string' ? raw.scheduleText : ''
+  const description = typeof raw.description === 'string' ? raw.description : null
+  const slugRaw = (raw as { slug?: unknown }).slug
+  const slug = typeof slugRaw === 'string' && slugRaw.trim() ? slugRaw.trim() : null
+
+  const expRaw = (raw as { expCost?: unknown }).expCost
+  let expCost = 0
+  if (expRaw !== undefined && expRaw !== null) {
+    const expNum = typeof expRaw === 'number' ? expRaw : Number(expRaw)
+    if (!Number.isFinite(expNum) || expNum < 0)
+      return null
+    expCost = Math.floor(expNum)
+  }
+  return {
+    documentId,
+    slug,
+    title,
+    scheduleText,
+    description,
+    expCost,
+  }
+}
+
+/** Один documentId + один логический слот (slug или title+время), чтобы не дублировать карточки при дублях в CMS. */
+function dedupeCityEvents(rows: CityEventRow[]): CityEventRow[] {
+  const byDoc = new Map<string, CityEventRow>()
+  for (const r of rows) {
+    if (!byDoc.has(r.documentId))
+      byDoc.set(r.documentId, r)
+  }
+  const seenLogical = new Set<string>()
+  const out: CityEventRow[] = []
+  for (const r of byDoc.values()) {
+    const logical = r.slug ? `slug:${r.slug}` : `ts:${r.title}\u0000${r.scheduleText}`
+    if (seenLogical.has(logical))
+      continue
+    seenLogical.add(logical)
+    out.push(r)
+  }
+  return out
+}
+
+const { findOne, find, create } = useStrapi()
+const { fetchUser } = useStrapiAuth()
+const { exp, loadOrCreateDataUser, addExp } = usePlayerDataUser()
+const { pushUserNotification } = usePushUserNotification()
 
 const cityId = getData<string>('cityId')
-const city = ref<any>(null)
+const city = ref<Record<string, unknown> | null>(null)
 
 if (cityId) {
-  city.value = await findOne('cities', cityId)
+  city.value = (await findOne('cities', cityId)) as Record<string, unknown> | null
 }
 
-const cityName = computed(() => city.value?.data?.name || 'ваш город')
+const cityName = computed(() => {
+  const d = city.value?.data as Record<string, unknown> | undefined
+  const name = d?.name
+  return typeof name === 'string' && name.trim() ? name.trim() : 'ваш город'
+})
 
-const COINS_KEY = 'cityCoins'
-const BOOKINGS_KEY = 'cityBookings'
-
-const getNumber = (key: string, fallback = 0) => {
-  const value = getData<number>(key)
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
-}
-
-const coins = ref(getNumber(COINS_KEY, 250))
-const bookings = ref<string[]>(getData<string[]>(BOOKINGS_KEY) || [])
+const cityEvents = ref<CityEventRow[]>([])
+const registeredEventIds = ref<string[]>([])
 const statusText = ref('')
+const eventsLoadError = ref('')
 
-const excursions = [
-  { id: 'hist-center', title: 'Исторический центр', date: 'Сб, 14:00', coinsRequired: 80 },
-  { id: 'night-river', title: 'Ночная набережная', date: 'Вс, 19:30', coinsRequired: 120 },
-  { id: 'hidden-yards', title: 'Тайные дворики', date: 'Пт, 18:00', coinsRequired: 150 },
-]
-
-const persist = () => {
-  setData(COINS_KEY, coins.value, 30, 'd')
-  setData(BOOKINGS_KEY, bookings.value, 30, 'd')
+async function loadCityEvents() {
+  eventsLoadError.value = ''
+  if (!cityId) {
+    cityEvents.value = []
+    return
+  }
+  try {
+    const res = await find('city-events', {
+      filters: {
+        city: { documentId: { $eq: cityId } },
+        publishedAt: { $notNull: true },
+      },
+      sort: ['startsAt:asc'],
+      pagination: { pageSize: 100 },
+    })
+    const rows = ((res?.data ?? []) as Array<Record<string, unknown>>)
+      .map(normalizeCityEvent)
+      .filter((r): r is CityEventRow => r != null)
+    cityEvents.value = dedupeCityEvents(rows)
+  }
+  catch (e) {
+    console.error('[city] load city-events', e)
+    eventsLoadError.value = 'Не удалось загрузить мероприятия'
+    cityEvents.value = []
+  }
 }
 
-const bookExcursion = (excursionId: string, coinsRequired: number) => {
-  if (bookings.value.includes(excursionId)) {
-    statusText.value = 'Вы уже записаны на эту экскурсию'
+async function loadRegistrationsForUser(userDocumentId: string) {
+  if (!cityId) {
+    registeredEventIds.value = []
     return
   }
-  if (coins.value < coinsRequired) {
-    statusText.value = 'Недостаточно валюты для записи'
+  try {
+    const res = await find('city-event-registrations', {
+      filters: {
+        users_permissions_user: { documentId: { $eq: userDocumentId } },
+      },
+      populate: {
+        city_event: {
+          fields: ['documentId'],
+          populate: {
+            city: { fields: ['documentId'] },
+          },
+        },
+      },
+    })
+    const ids: string[] = []
+    for (const row of (res?.data ?? []) as Array<Record<string, unknown>>) {
+      const ce = row.city_event as Record<string, unknown> | undefined
+      const evId = ce?.documentId != null ? String(ce.documentId) : ''
+      const c = ce?.city as { documentId?: string } | undefined
+      const cId = c?.documentId != null ? String(c.documentId) : ''
+      if (evId && cId === cityId)
+        ids.push(evId)
+    }
+    registeredEventIds.value = ids
+  }
+  catch (e) {
+    console.error('[city] load registrations', e)
+    registeredEventIds.value = []
+  }
+}
+
+const user = await fetchUser()
+if (user.value?.documentId) {
+  await loadOrCreateDataUser()
+  await loadRegistrationsForUser(user.value.documentId)
+}
+
+await loadCityEvents()
+
+onActivated(async () => {
+  await loadOrCreateDataUser()
+  await loadCityEvents()
+  const u = await fetchUser()
+  if (u.value?.documentId)
+    await loadRegistrationsForUser(u.value.documentId)
+})
+
+function isRegistered(eventDocumentId: string) {
+  return registeredEventIds.value.includes(eventDocumentId)
+}
+
+const expandedEventIds = ref<Record<string, boolean>>({})
+
+function hasReadableDescription(desc: string | null) {
+  return typeof desc === 'string' && desc.trim().length > 0
+}
+
+function toggleEventExpanded(documentId: string) {
+  expandedEventIds.value = {
+    ...expandedEventIds.value,
+    [documentId]: !expandedEventIds.value[documentId],
+  }
+}
+
+const bookExcursion = async (eventDocumentId: string, expRequired: number, eventTitle: string) => {
+  const u = await fetchUser()
+  if (!u.value?.documentId) {
+    statusText.value = 'Войди в аккаунт, чтобы записаться на мероприятие'
     return
   }
-  coins.value -= coinsRequired
-  bookings.value = [...bookings.value, excursionId]
-  persist()
-  statusText.value = 'Запись оформлена! Экскурсия добавлена в ваши активности'
+  const userId = u.value.documentId
+  if (isRegistered(eventDocumentId)) {
+    statusText.value = 'Вы уже записаны на это мероприятие'
+    return
+  }
+  await loadOrCreateDataUser()
+  if (exp.value < expRequired) {
+    statusText.value = 'Недостаточно EXP для записи'
+    return
+  }
+
+  try {
+    const dup = await find('city-event-registrations', {
+      filters: {
+        users_permissions_user: { documentId: { $eq: userId } },
+        city_event: { documentId: { $eq: eventDocumentId } },
+      },
+      pagination: { pageSize: 1 },
+    })
+    if ((dup?.data?.length ?? 0) > 0) {
+      registeredEventIds.value = [...new Set([...registeredEventIds.value, eventDocumentId])]
+      statusText.value = 'Вы уже записаны на это мероприятие'
+      return
+    }
+
+    await addExp(-expRequired)
+    try {
+      await create('city-event-registrations', {
+        city_event: eventDocumentId,
+        users_permissions_user: userId,
+        expPaid: expRequired,
+        publishedAt: new Date().toISOString(),
+      })
+    }
+    catch (createErr) {
+      try {
+        await addExp(expRequired)
+      }
+      catch {
+        /* возврат EXP не удался — залогируем основную ошибку */
+      }
+      throw createErr
+    }
+    registeredEventIds.value = [...registeredEventIds.value, eventDocumentId]
+    await pushUserNotification({
+      text: `Ты записан на «${eventTitle}». Списано ${expRequired} EXP.`,
+      type: 'info',
+      category: 'system',
+    })
+    statusText.value = 'Запись оформлена! Мероприятие в твоих активностях'
+  }
+  catch (e) {
+    console.error('[city] registration', e)
+    statusText.value = 'Не удалось оформить запись. Попробуй ещё раз'
+  }
 }
 </script>
 
@@ -66,41 +258,80 @@ const bookExcursion = (excursionId: string, coinsRequired: number) => {
         <div class="city-hero-decor" aria-hidden="true">
           <span class="decor-orb decor-orb--one" />
           <span class="decor-orb decor-orb--two" />
+          <span class="decor-orb decor-orb--three" />
+          <span class="decor-ring decor-ring--one" />
         </div>
         <p class="city-label">городской центр</p>
         <p class="city-name">{{ cityName }}</p>
-        <p class="city-desc">Эксклюзивные городские экскурсии доступны только в этом разделе.</p>
+        <p class="city-desc">Городские мероприятия и экскурсии: запись за EXP с аккаунта.</p>
         <div class="city-stats">
-          <p><span>валюта</span><strong>{{ coins }}</strong></p>
+          <p><span>EXP</span><strong>{{ exp }}</strong></p>
         </div>
       </section>
 
       <section class="excursions-section">
         <div class="action-title-row">
           <CalendarDays class="action-icon" />
-          <p class="action-title">эксклюзивные экскурсии</p>
+          <p class="action-title">мероприятия</p>
         </div>
-        <p class="action-text">Выбирай маршрут и записывайся за городскую валюту</p>
+        <p class="action-text">Выбери событие и запишись за EXP</p>
 
-        <div class="excursions-list">
-          <article v-for="item in excursions" :key="item.id" class="excursion-card">
+        <p v-if="eventsLoadError" class="status-text status-text--warn" role="alert">
+          {{ eventsLoadError }}
+        </p>
+
+        <div v-else-if="cityEvents.length === 0" class="empty-events">
+          Пока нет мероприятий для этого города — загляни позже или добавь их в админке Strapi (City event).
+        </div>
+
+        <div v-else class="excursions-list">
+          <article
+            v-for="item in cityEvents"
+            :key="item.documentId"
+            class="excursion-card"
+            :class="{ 'excursion-card--open': expandedEventIds[item.documentId] }"
+          >
             <div class="excursion-main">
-              <p class="excursion-title">{{ item.title }}</p>
-              <p class="excursion-meta">{{ item.date }}</p>
-              <span class="excursion-price">{{ item.coinsRequired }} валюты</span>
+              <p class="excursion-title">
+                {{ item.title }}
+              </p>
+              <p class="excursion-meta">
+                {{ item.scheduleText }}
+              </p>
+              <span class="excursion-price">{{ item.expCost }} EXP</span>
+              <button
+                v-if="hasReadableDescription(item.description)"
+                type="button"
+                class="excursion-toggle"
+                :aria-expanded="Boolean(expandedEventIds[item.documentId])"
+                @click="toggleEventExpanded(item.documentId)"
+              >
+                <span>{{ expandedEventIds[item.documentId] ? 'Свернуть' : 'Подробнее' }}</span>
+                <ChevronDown class="excursion-chevron" :class="{ 'excursion-chevron--up': expandedEventIds[item.documentId] }" />
+              </button>
+              <div
+                v-show="expandedEventIds[item.documentId] && hasReadableDescription(item.description)"
+                class="excursion-detail"
+              >
+                <p class="excursion-detail-text">
+                  {{ item.description }}
+                </p>
+              </div>
             </div>
             <ButtonAction
               class="excursion-btn"
-              :disabled="bookings.includes(item.id)"
-              @click="bookExcursion(item.id, item.coinsRequired)"
+              :disabled="isRegistered(item.documentId)"
+              @click="bookExcursion(item.documentId, item.expCost, item.title)"
             >
-              {{ bookings.includes(item.id) ? 'записаны' : 'записаться' }}
+              {{ isRegistered(item.documentId) ? 'записаны' : 'записаться' }}
             </ButtonAction>
           </article>
         </div>
       </section>
 
-      <p v-if="statusText" class="status-text">{{ statusText }}</p>
+      <p v-if="statusText" class="status-text">
+        {{ statusText }}
+      </p>
     </div>
 
     <FooterNav />
@@ -122,7 +353,7 @@ const bookExcursion = (excursionId: string, coinsRequired: number) => {
   padding: 12px 16px 112px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .city-header {
@@ -133,14 +364,15 @@ const bookExcursion = (excursionId: string, coinsRequired: number) => {
 }
 
 .back-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 16px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
 }
 
 .back-icon {
@@ -150,12 +382,12 @@ const bookExcursion = (excursionId: string, coinsRequired: number) => {
 
 .city-hero {
   position: relative;
-  border-radius: 18px;
+  border-radius: 28px;
   background: linear-gradient(145deg, #ffffff 0%, #eef2ff 44%, #f8fafc 100%);
   border: 1px solid #dbe5ff;
-  padding: 14px 14px 12px;
+  padding: 18px 18px 16px;
   overflow: hidden;
-  box-shadow: 0 10px 26px rgba(71, 125, 255, 0.12);
+  box-shadow: 0 12px 32px rgba(71, 125, 255, 0.14);
 }
 
 .city-hero-decor {
@@ -171,19 +403,45 @@ const bookExcursion = (excursionId: string, coinsRequired: number) => {
 }
 
 .decor-orb--one {
-  width: 120px;
-  height: 120px;
-  right: -26px;
-  top: -34px;
-  background: rgba(71, 125, 255, 0.18);
+  width: 132px;
+  height: 132px;
+  right: -32px;
+  top: -40px;
+  background: radial-gradient(circle, rgba(71, 125, 255, 0.28) 0%, rgba(71, 125, 255, 0.06) 62%, transparent 72%);
+  filter: blur(2px);
 }
 
 .decor-orb--two {
-  width: 88px;
-  height: 88px;
-  right: 44px;
-  top: -16px;
-  background: rgba(99, 102, 241, 0.12);
+  width: 96px;
+  height: 96px;
+  right: 48px;
+  top: -18px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
+  filter: blur(1.5px);
+}
+
+.decor-orb--three {
+  width: 100px;
+  height: 100px;
+  left: -36px;
+  bottom: -28px;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.16) 0%, transparent 68%);
+  filter: blur(2px);
+}
+
+.decor-ring {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  border: 1px solid rgba(71, 125, 255, 0.12);
+}
+
+.decor-ring--one {
+  width: 140px;
+  height: 140px;
+  right: 8%;
+  bottom: -48px;
+  opacity: 0.85;
 }
 
 .city-label {
@@ -223,13 +481,14 @@ const bookExcursion = (excursionId: string, coinsRequired: number) => {
   margin: 0;
   font-size: 12px;
   color: #111827;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.88);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid #e7ecf6;
-  padding: 8px 10px;
+  padding: 10px 14px;
   display: inline-flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 10px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
 }
 
 .city-stats span {
@@ -248,9 +507,9 @@ const bookExcursion = (excursionId: string, coinsRequired: number) => {
 .excursions-section {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 18px;
-  padding: 12px;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+  border-radius: 26px;
+  padding: 16px 16px 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
   position: relative;
   overflow: hidden;
 }
@@ -291,28 +550,46 @@ const bookExcursion = (excursionId: string, coinsRequired: number) => {
   font-size: 13px;
 }
 
+.empty-events {
+  margin-top: 12px;
+  padding: 14px 12px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #64748b;
+  background: #f8fafc;
+  border-radius: 16px;
+  border: 1px dashed #cbd5e1;
+}
+
 .excursions-list {
-  margin-top: 10px;
+  margin-top: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .excursion-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   background: linear-gradient(140deg, #f8fafc 0%, #eef2ff 100%);
   border: 1px solid #dbe4ff;
-  border-radius: 14px;
-  padding: 12px;
+  border-radius: 22px;
+  padding: 14px 14px 14px 16px;
+}
+
+.excursion-card--open {
+  border-color: #c7d2fe;
+  box-shadow: 0 4px 18px rgba(71, 125, 255, 0.12);
 }
 
 .excursion-main {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  flex: 1;
 }
 
 .excursion-title {
@@ -325,6 +602,54 @@ const bookExcursion = (excursionId: string, coinsRequired: number) => {
   margin: 0;
   font-size: 12px;
   color: #6b7280;
+}
+
+.excursion-toggle {
+  margin: 8px 0 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3557d6;
+  cursor: pointer;
+  text-align: left;
+  width: fit-content;
+}
+
+.excursion-toggle:hover {
+  color: #1d4ed8;
+}
+
+.excursion-chevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.excursion-chevron--up {
+  transform: rotate(-180deg);
+}
+
+.excursion-detail {
+  margin-top: 10px;
+  padding: 12px 12px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #e2e8f0;
+}
+
+.excursion-detail-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #334155;
+  white-space: pre-wrap;
 }
 
 .excursion-price {
@@ -354,8 +679,14 @@ const bookExcursion = (excursionId: string, coinsRequired: number) => {
   color: #1e40af;
   background: linear-gradient(160deg, #eef2ff 0%, #e0e7ff 100%);
   border: 1px solid #c7d2fe;
-  border-radius: 12px;
-  padding: 10px 12px;
+  border-radius: 18px;
+  padding: 12px 14px;
+}
+
+.status-text--warn {
+  color: #9a3412;
+  background: linear-gradient(160deg, #fff7ed 0%, #ffedd5 100%);
+  border-color: #fdba74;
 }
 
 @media (max-width: 840px) {

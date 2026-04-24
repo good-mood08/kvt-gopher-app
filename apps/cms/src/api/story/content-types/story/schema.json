@@ -19,9 +19,8 @@
     },
     "speakers": {
       "type": "relation",
-      "relation": "manyToMany",
-      "target": "api::speaker.speaker",
-      "mappedBy": "stories"
+      "relation": "oneToMany",
+      "target": "api::speaker.speaker"
     },
     "locations": {
       "type": "relation",

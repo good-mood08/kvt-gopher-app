@@ -2,11 +2,22 @@
 import { Bell } from 'lucide-vue-next'
 
 defineProps<{
-    /**
-     * имя пользователя
-     */
-    username: string
+  /** имя пользователя */
+  username: string
 }>()
+
+const { hasUnread, refresh: refreshUnread } = useNotificationUnread()
+const { exp, loadOrCreateDataUser } = usePlayerDataUser()
+
+onMounted(async () => {
+  void refreshUnread()
+  await loadOrCreateDataUser()
+})
+
+onActivated(async () => {
+  void refreshUnread()
+  await loadOrCreateDataUser()
+})
 
 const goToNotifications = async () => {
   await navigateTo('/notification')
@@ -21,11 +32,17 @@ const goToNotifications = async () => {
                 </div>
 
                 <p class="name">{{ username }}</p>
-                <p class="exp">0 EXP</p>
-                <button class="help-mark" type="button" aria-label="Уведомления" @click.stop="goToNotifications">
-                  <Bell :stroke-width="2" class="help-mark-icon" />
-                </button>
+                <p class="exp">{{ exp }} EXP</p>
             </div>
+            <button
+              class="help-mark"
+              type="button"
+              :aria-label="hasUnread ? 'Уведомления, есть непрочитанные' : 'Уведомления'"
+              @click.stop="goToNotifications"
+            >
+              <Bell :stroke-width="2" class="help-mark-icon" />
+              <span v-if="hasUnread" class="help-mark-badge" aria-hidden="true" />
+            </button>
         </div>
     </div>
 </template>
@@ -42,7 +59,7 @@ const goToNotifications = async () => {
     padding: 14px 18px 10px;
     background-color: #DCDCDD;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     border: none;
     width: 100%;
@@ -103,25 +120,41 @@ const goToNotifications = async () => {
 
 .help-mark {
     position: absolute;
-    right: 12px;
-    top: 50%;
-    width: 35px;
-    height: 34px;
+    right: 20px;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    height: 40px;
+    margin-block: auto;
     border-radius: 999px;
     border: 1px solid #dddddd;
     background: #f0f0f0;
     color: #d53c3c;
-    display: inline-flex;
+    display: flex;
     justify-content: center;
     align-items: center;
     padding: 0;
-    transform: translateY(-50%);
-    cursor: default;
+    cursor: pointer;
 }
 
 .help-mark-icon {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
+    display: block;
+    flex-shrink: 0;
+}
+
+.help-mark-badge {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: #ef4444;
+    border: 2px solid #f0f0f0;
+    box-sizing: content-box;
+    pointer-events: none;
 }
 
 @media (max-width: 480px) {
@@ -149,10 +182,14 @@ const goToNotifications = async () => {
     }
 
     .help-mark {
-        width: 35px;
-        height: 34px;
-        right: 10px;
-        top: 50%;
+        width: 38px;
+        height: 38px;
+        right: 16px;
+    }
+
+    .help-mark-icon {
+        width: 19px;
+        height: 19px;
     }
 }
 
@@ -185,10 +222,18 @@ const goToNotifications = async () => {
     }
 
     .help-mark {
-        width: 8.3vw;
-        height: 8.3vw;
-        font-size: 5.6vw;
-        right: 2.2vw;
+        width: 9vw;
+        height: 9vw;
+        max-width: 40px;
+        max-height: 40px;
+        right: 3vw;
+    }
+
+    .help-mark-icon {
+        width: 4.8vw;
+        height: 4.8vw;
+        max-width: 20px;
+        max-height: 20px;
     }
 }
 

@@ -135,7 +135,7 @@ const getVoiceForMessage = (message) => {
   return a === me ? pub.ttsYandexVoicePlayer : pub.ttsYandexVoiceNpc
 }
 
-const storyBranches = new Function(`return ${story.data.content}`)();
+const storyBranches = parseStoryBranchesContent(story.data.content)
 
 const currentStory = ref(storyBranches.main)
 const currentOptions = ref([])

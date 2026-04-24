@@ -6,14 +6,41 @@ const { fetchUser,logout } = useStrapiAuth()
 const user = await fetchUser()
 const { find, findOne } = useStrapi()
 const userId = user.value?.documentId
+const playerData = usePlayerDataUser()
 
 const FALLBACK_SUSLIK = '/images/suslo.svg'
 
+function outfitUrlsFromCloth(cloth: Record<string, unknown> | undefined, fallbackSislik: string) {
+  const sislikUrl = useStrapiMediaUrlFirst(cloth?.sislik)
+  const dataUrl = useStrapiMediaUrl(cloth?.data)
+  return {
+    dataUrl: dataUrl || '/images/Jacket.svg',
+    sislikUrl: sislikUrl || dataUrl || fallbackSislik,
+  }
+}
+
 const ownedCloths = ref<Array<{
   documentId: string
+  clothUserDocumentId: string
   dataUrl: string
   sislikUrl: string
 }>>([])
+
+let dataUserRow: Record<string, unknown> | null = null
+if (userId) {
+  dataUserRow = await playerData.loadOrCreateDataUser()
+}
+
+const { exp } = playerData
+
+const suslic = ref(FALLBACK_SUSLIK)
+if (userId && dataUserRow?.cloth_user) {
+  const cloth = (dataUserRow.cloth_user as Record<string, unknown>).cloth as
+    | Record<string, unknown>
+    | undefined
+  const { sislikUrl } = outfitUrlsFromCloth(cloth, FALLBACK_SUSLIK)
+  suslic.value = sislikUrl
+}
 
 if (userId) {
   const clothUsersRes = await find('cloth-users', {
@@ -24,31 +51,26 @@ if (userId) {
       cloth: { populate: { data: true, sislik: true } },
     },
   })
-  const byId = new Map<string, { documentId: string, dataUrl: string, sislikUrl: string }>()
-  for (const row of clothUsersRes?.data ?? []) {
+  const byId = new Map<
+    string,
+    { documentId: string, clothUserDocumentId: string, dataUrl: string, sislikUrl: string }
+  >()
+  for (const row of (clothUsersRes?.data ?? []) as Array<Record<string, unknown>>) {
     const cloth = row.cloth as Record<string, unknown> | undefined
     if (!cloth?.documentId) continue
     const id = String(cloth.documentId)
     if (byId.has(id)) continue
-    const sislikUrl = useStrapiMediaUrlFirst(cloth.sislik)
-    const dataUrl = useStrapiMediaUrl(cloth.data)
+    const clothUserDocumentId = row.documentId != null ? String(row.documentId) : ''
+    if (!clothUserDocumentId) continue
+    const { dataUrl, sislikUrl } = outfitUrlsFromCloth(cloth, FALLBACK_SUSLIK)
     byId.set(id, {
       documentId: id,
-      dataUrl: dataUrl || '/images/Jacket.svg',
-      sislikUrl: sislikUrl || dataUrl || FALLBACK_SUSLIK,
+      clothUserDocumentId,
+      dataUrl,
+      sislikUrl,
     })
   }
   ownedCloths.value = [...byId.values()]
-}
-
-const suslic = ref(FALLBACK_SUSLIK)
-
-function equipCloth(sislikUrl: string) {
-  suslic.value = sislikUrl || FALLBACK_SUSLIK
-}
-
-function unequip() {
-  suslic.value = FALLBACK_SUSLIK
 }
 const maps = await find('maps',{
     populate:'*'
@@ -65,8 +87,9 @@ for (const map of maps.data) {
       location: { map: { documentId: map.documentId } }
     }
   })
-  if (Math.round((progresses.data.length / mapData.data.locations.length) * 100) === 100){
-      mapComplite.value++
+  const locTotal = mapData?.data?.locations?.length ?? 0
+  if (locTotal > 0 && Math.round((progresses.data.length / locTotal) * 100) === 100) {
+    mapComplite.value++
   }
 }
 const map = await find('user-map-stories',{filters:{
@@ -79,12 +102,13 @@ const achievementsComplite = await find('user-achievements',{filters:{
     users_permissions_user: { documentId: { $eq: userId } }
 }})
 const name = user.value?.username!
-const stats = [
-  { number: locationComlite.data.length, label: 'зданий собрано' },
-  { number: map.data.length, label: 'карт открыто' },
-  { number: achievementsComplite.data.length, label: 'достижений собрано' },
-  { number: mapComplite.value, label: 'карт пройдено' }
-]
+
+const stats = computed(() => [
+  { id: 'locations', number: locationComlite.data.length, label: 'зданий собрано' },
+  { id: 'maps-open', number: map.data.length, label: 'карт открыто' },
+  { id: 'achievements', number: achievementsComplite.data.length, label: 'достижений собрано' },
+  { id: 'maps-done', number: mapComplite.value, label: 'карт пройдено' },
+])
 const achievements = await find('user-achievements',{
     populate:{
         achievement:true
@@ -98,36 +122,116 @@ const handleCitySelected = ({ city }) => {
 setData('cityId', city, 1 , 'd')
 }
 
-const suslic = ref('/images/suslo.svg')
-
 type WardrobeSlot = {
   id: string
   kind: 'icon' | 'image' | 'empty'
   icon?: string
   image?: string
   outfit?: string | null
+  clothUserDocumentId?: string
 }
 
-const wardrobeSlots: WardrobeSlot[] = [
-  { id: 'reset', kind: 'icon', icon: 'mdi:close', outfit: '/images/suslo.svg' },
-  { id: 'jacket', kind: 'image', image: '/images/Jacket.svg', outfit: '/images/suskic_in_jacket.svg' },
-  { id: 'empty-1', kind: 'empty' },
-  { id: 'empty-2', kind: 'empty' },
-  { id: 'empty-3', kind: 'empty' },
-  { id: 'empty-4', kind: 'empty' },
-  { id: 'empty-5', kind: 'empty' },
-  { id: 'empty-6', kind: 'empty' },
-  { id: 'empty-7', kind: 'empty' },
-  { id: 'empty-8', kind: 'empty' },
-  { id: 'empty-9', kind: 'empty' },
-  { id: 'empty-10', kind: 'empty' }
-]
-const selectWardrobeSlot = (slot: WardrobeSlot) => {
-  if (!slot.outfit) {
+const WARDROBE_GRID_SLOTS = 12
+
+const allowedClothUserIds = computed(
+  () => new Set(ownedCloths.value.map(c => c.clothUserDocumentId)),
+)
+
+const wardrobeSlots = computed((): WardrobeSlot[] => {
+  const slots: WardrobeSlot[] = [
+    { id: 'reset', kind: 'icon', icon: 'mdi:close', outfit: FALLBACK_SUSLIK },
+  ]
+  for (const c of ownedCloths.value) {
+    slots.push({
+      id: c.documentId,
+      kind: 'image',
+      image: c.dataUrl,
+      outfit: c.sislikUrl,
+      clothUserDocumentId: c.clothUserDocumentId,
+    })
+  }
+  let n = 0
+  while (slots.length < WARDROBE_GRID_SLOTS) {
+    slots.push({ id: `empty-${n++}`, kind: 'empty' })
+  }
+  return slots
+})
+
+const wardrobeSaving = ref(false)
+const wardrobeError = ref('')
+
+function suslikUrlFromDataUser(row: Record<string, unknown> | null, fallback: string): string {
+  if (!row?.cloth_user) return fallback
+  const cloth = (row.cloth_user as Record<string, unknown>).cloth as
+    | Record<string, unknown>
+    | undefined
+  return outfitUrlsFromCloth(cloth, fallback).sislikUrl
+}
+
+const selectWardrobeSlot = async (slot: WardrobeSlot) => {
+  if (!slot.outfit || wardrobeSaving.value) {
     return
   }
 
-  suslic.value = slot.outfit
+  if (!userId) {
+    wardrobeError.value = 'Войди в аккаунт, чтобы сохранить образ'
+    return
+  }
+
+  const prevSuslic = suslic.value
+  wardrobeSaving.value = true
+  wardrobeError.value = ''
+
+  try {
+    if (slot.id === 'reset') {
+      await playerData.setEquippedClothUser(null)
+      const fresh = await playerData.loadOrCreateDataUser()
+      suslic.value = suslikUrlFromDataUser(fresh, FALLBACK_SUSLIK)
+      console.info('[kvt] профиль: сброс образа (data-user.cloth_user очищен)', {
+        dataUserDocumentId: fresh?.documentId,
+      })
+      return
+    }
+
+    if (!slot.clothUserDocumentId?.trim()) {
+      wardrobeError.value = 'Нет данных костюма'
+      return
+    }
+
+    if (!allowedClothUserIds.value.has(slot.clothUserDocumentId)) {
+      wardrobeError.value = 'Этот костюм не в твоей коллекции'
+      return
+    }
+
+    await playerData.setEquippedClothUser(slot.clothUserDocumentId)
+    const fresh = await playerData.loadOrCreateDataUser()
+    suslic.value = suslikUrlFromDataUser(fresh, slot.outfit ?? FALLBACK_SUSLIK)
+    console.info('[kvt] профиль: костюм применён', {
+      clothDocumentId: slot.id,
+      clothUserDocumentId: slot.clothUserDocumentId,
+      dataUserDocumentId: fresh?.documentId,
+    })
+  }
+  catch (e) {
+    suslic.value = prevSuslic
+    const code = e instanceof Error ? e.message : ''
+    if (code === 'CLOTH_USER_NOT_OWNED') {
+      wardrobeError.value = 'Костюм не найден или чужой'
+    }
+    else if (code === 'RELATION_NOT_PERSISTED' || code === 'RELATION_CLEAR_FAILED') {
+      wardrobeError.value = 'Сервер не сохранил образ — попробуй ещё раз'
+    }
+    else if (code === 'NO_USER' || code === 'NO_DATA_USER') {
+      wardrobeError.value = 'Не удалось загрузить профиль игрока'
+    }
+    else {
+      wardrobeError.value = 'Не удалось сохранить образ'
+    }
+    console.error('[profile] сохранить образ в data-user', e)
+  }
+  finally {
+    wardrobeSaving.value = false
+  }
 }
 
 const isWardrobeSlotActive = (slot: WardrobeSlot) =>
@@ -145,7 +249,7 @@ const isWardrobeSlotActive = (slot: WardrobeSlot) =>
                     </div>
                     <div class="profile-user-meta">
                         <p class="profile-name">{{ name }}</p>
-                        <p class="profile-exp">0 EXP</p>
+                        <p class="profile-exp">{{ exp }} EXP</p>
                     </div>
                 </div>
                 <CitySelect
@@ -158,14 +262,16 @@ const isWardrobeSlotActive = (slot: WardrobeSlot) =>
         </div>
         <div class="display">
             <div class="section profile-stats-section">
-                <TwentyText class="profile-stats-title">статистика</TwentyText>
-                <div class="statistic-card">
-                    <Statistic
-                        v-for="i in stats"
-                        :key="i.label"
-                        :title="i.number"
-                        :description="i.label"
-                    />
+                <TwentyText id="profile-stats-heading" class="profile-stats-title">статистика</TwentyText>
+                <div class="profile-stats-panel" role="region" aria-labelledby="profile-stats-heading">
+                    <div class="profile-stats-rows" role="list">
+                        <Statistic
+                            v-for="row in stats"
+                            :key="row.id"
+                            :title="row.number"
+                            :description="row.label"
+                        />
+                    </div>
                 </div>
             </div>
                 
@@ -185,32 +291,35 @@ const isWardrobeSlotActive = (slot: WardrobeSlot) =>
                         <img :src="suslic" class="dress-suslik" alt="суслик в образе">
                     </div>
 
-                    <div class="wardrobe-grid">
-                        <button
-                          v-for="slot in wardrobeSlots"
-                          :key="slot.id"
-                          type="button"
-                          class="wardrobe-slot"
-                          :class="{
-                            'wardrobe-slot--clickable': Boolean(slot.outfit),
-                            'wardrobe-slot--selected': isWardrobeSlotActive(slot),
-                            'wardrobe-slot--empty': slot.kind === 'empty'
-                          }"
-                          :disabled="!slot.outfit"
-                          @click="selectWardrobeSlot(slot)"
-                        >
-                          <img
-                            v-if="slot.kind === 'image' && slot.image"
-                            :src="slot.image"
-                            alt=""
-                            class="wardrobe-slot-image"
+                    <div class="wardrobe-column">
+                      <p v-if="wardrobeError" class="wardrobe-error" role="alert">{{ wardrobeError }}</p>
+                      <div class="wardrobe-grid">
+                          <button
+                            v-for="slot in wardrobeSlots"
+                            :key="slot.id"
+                            type="button"
+                            class="wardrobe-slot"
+                            :class="{
+                              'wardrobe-slot--clickable': Boolean(slot.outfit),
+                              'wardrobe-slot--selected': isWardrobeSlotActive(slot),
+                              'wardrobe-slot--empty': slot.kind === 'empty'
+                            }"
+                            :disabled="!slot.outfit || wardrobeSaving"
+                            @click="selectWardrobeSlot(slot)"
                           >
-                          <Icon
-                            v-else-if="slot.kind === 'icon' && slot.icon"
-                            :name="slot.icon"
-                            class="wardrobe-slot-icon"
-                          />
-                        </button>
+                            <img
+                              v-if="slot.kind === 'image' && slot.image"
+                              :src="slot.image"
+                              alt=""
+                              class="wardrobe-slot-image"
+                            >
+                            <Icon
+                              v-else-if="slot.kind === 'icon' && slot.icon"
+                              :name="slot.icon"
+                              class="wardrobe-slot-icon"
+                            />
+                          </button>
+                      </div>
                     </div>
                 </div>
             </div>
@@ -222,13 +331,12 @@ const isWardrobeSlotActive = (slot: WardrobeSlot) =>
                 </div>
                 <div class="blocks achievements-cards">
                     <ProfileAchievementCard
-                      v-for="(i, idx) in achievements.data"
+                      v-for="i in achievements.data"
                       :key="i.documentId"
                       :id="i.documentId"
                       :collected="Boolean(i.collected)"
                       :description="String(i.achievement?.description || '')"
                       :title="String(i.achievement?.title || '')"
-                      :variant="idx % 2 === 0 ? 'sun' : 'mint'"
                     />
                 </div>
             </div>
@@ -341,8 +449,9 @@ const isWardrobeSlotActive = (slot: WardrobeSlot) =>
 }
 
 .profile-stats-title{
-    margin: 8px 0 2px;
+    margin: 8px 0 12px;
     text-align: center;
+    width: 100%;
     font-family: 'Gothic 60';
     font-size: 24px;
     line-height: 0.92;
@@ -400,17 +509,33 @@ const isWardrobeSlotActive = (slot: WardrobeSlot) =>
     transform: translateX(-50%);
 }
 
+.wardrobe-column{
+    justify-self: end;
+    align-self: end;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    margin-bottom: 34px;
+    position: relative;
+    z-index: 2;
+}
+
+.wardrobe-error{
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.3;
+    color: #b42318;
+    max-width: 200px;
+    text-align: right;
+}
+
 .wardrobe-grid{
     display: grid;
     grid-template-columns: repeat(3, 47px);
     gap: 8px;
     width: 157px;
-    justify-self: end;
-    align-self: end;
     margin-left: 0;
-    margin-bottom: 34px;
-    position: relative;
-    z-index: 2;
 }
 
 .wardrobe-slot{
@@ -495,11 +620,30 @@ const isWardrobeSlotActive = (slot: WardrobeSlot) =>
     row-gap: 12px;
     align-items: stretch;
 }
-.statistic-card{
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px;
+.profile-stats-panel {
     width: 100%;
+    max-width: 100%;
+    border-radius: 26px;
+    background:
+        linear-gradient(
+            90deg,
+            rgba(93, 134, 245, 0.38) 0%,
+            rgba(231, 207, 82, 0.42) 50%,
+            rgba(126, 203, 205, 0.36) 100%
+        )
+        0 0 / 100% 4px no-repeat,
+        linear-gradient(165deg, #f0f0f1 0%, #e4e4e6 55%, #dcdcdf 100%);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: 14px 12px 16px;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+}
+
+.profile-stats-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 .main {
     font-size: 20px;
@@ -558,14 +702,14 @@ const isWardrobeSlotActive = (slot: WardrobeSlot) =>
         height: 274px;
     }
 
+    .wardrobe-column{
+        margin-bottom: 32px;
+    }
+
     .wardrobe-grid{
         grid-template-columns: repeat(3, 47px);
         gap: 8px;
         width: 157px;
-        justify-self: end;
-        align-self: end;
-        margin-left: 0;
-        margin-bottom: 32px;
     }
 
     .wardrobe-slot{
@@ -629,10 +773,6 @@ const isWardrobeSlotActive = (slot: WardrobeSlot) =>
         transform: translateY(-1px);
     }
 
-    .statistic-card{
-        gap: 12px;
-    }
-
     .dress-layout{
         grid-template-columns: minmax(0, 1fr) minmax(132px, 0.92fr);
         gap: 0;
@@ -654,14 +794,14 @@ const isWardrobeSlotActive = (slot: WardrobeSlot) =>
         height: 226px;
     }
 
+    .wardrobe-column{
+        margin-bottom: 28px;
+    }
+
     .wardrobe-grid{
         grid-template-columns: repeat(3, 47px);
         gap: 6px;
         width: 153px;
-        justify-self: end;
-        align-self: end;
-        margin-left: 0;
-        margin-bottom: 28px;
     }
 
     .wardrobe-slot{
