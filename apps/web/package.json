@@ -8,9 +8,7 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "test:elevenlabs": "node scripts/test-elevenlabs.mjs",
-    "test:yandex-speechkit": "node scripts/test-yandex-speechkit.mjs"
+    "postinstall": "nuxt prepare"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",

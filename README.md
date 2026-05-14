@@ -18,6 +18,11 @@ cd apps/cms
 pnpm strapi import --file ./path-to-data-file
 ```
 
+ cd C:\platform-tools
+ .\adb.exe devices
+ .\adb.exe reverse tcp:3000 tcp:3000 ; .\adb.exe reverse tcp:1337 tcp:1337
+  .\adb.exe reverse --list
+   .\adb.exe reverse --remove-all
 Для Docker-режима ручной импорт не нужен: импорт `apps/cms/data.json.tar.gz` выполняется на этапе сборки образа `cms`.
 u
 # Turborepo VueJS/NuxtJS starter

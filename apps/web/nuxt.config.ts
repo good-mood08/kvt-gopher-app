@@ -2,6 +2,17 @@
 const strapiUrl = process.env.NUXT_PUBLIC_STRAPI_URL || ''
 
 export default defineNuxtConfig({
+  app: {
+    head: {
+      htmlAttrs: {
+        lang: 'ru',
+        translate: 'no',
+      },
+      meta: [
+        { name: 'google', content: 'notranslate' },
+      ],
+    },
+  },
   compatibilityDate: '2026-04-22',
   components: {
     dirs: [

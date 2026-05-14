@@ -1,18 +1,23 @@
 <script setup lang="ts">
 const route = useRoute()
-const { params } = useRoute()
-const CityId = params.id as string
-const { authenticateProvider, fetchUser, logout } = useStrapiAuth()
+const authError = ref('')
+const { authenticateProvider, fetchUser } = useStrapiAuth()
 
 // Обрабатываем callback от Google
 onMounted(async () => {
+  const accessToken = route.query.access_token
+  if (!accessToken || typeof accessToken !== 'string') {
+    authError.value = 'Ошибка авторизации Google: не получен access_token. Проверь настройки callback URL.'
+    return
+  }
+
   try {
-    await authenticateProvider('google', route.query.access_token as string)
+    await authenticateProvider('google', accessToken)
     await fetchUser() // Обновляем данные пользователя
     await navigateTo(`/general`)
   } catch (error) {
     console.error('Ошибка авторизации:', error)
-    await navigateTo('/')
+    authError.value = 'Ошибка авторизации Google. Попробуйте снова.'
   }
 })
 </script>
@@ -21,8 +26,16 @@ onMounted(async () => {
 
 <template>
   <div class="loading-container">
-    <div class="loading-spinner"></div>
-    <p class="loading-text">Loading<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></p>
+    <template v-if="authError">
+      <p class="loading-text">{{ authError }}</p>
+      <button class="retry-button" type="button" @click="navigateTo('/')">
+        Вернуться к авторизации
+      </button>
+    </template>
+    <template v-else>
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Loading<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></p>
+    </template>
   </div>
 </template>
 
@@ -65,6 +78,7 @@ onMounted(async () => {
   font-size: 24px;
   font-weight: 500;
   letter-spacing: 2px;
+  text-align: center;
 }
 
 .dot {
@@ -81,5 +95,16 @@ onMounted(async () => {
   0%, 20% { opacity: 0; transform: translateY(0); }
   50% { opacity: 1; transform: translateY(-5px); }
   80%, 100% { opacity: 0; transform: translateY(0); }
+}
+
+.retry-button {
+  margin-top: 16px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #3498db;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
 }
 </style>
