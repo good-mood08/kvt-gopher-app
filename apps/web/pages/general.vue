@@ -5,6 +5,10 @@ const { fetchUser } = useStrapiAuth()
 const user = await fetchUser()
 const { find, findOne } = useStrapi()
 const cities = ref<any>(null)
+const userTourId = computed(() => {
+  const currentUser = user.value as Record<string, unknown> | null | undefined
+  return currentUser?.documentId ?? currentUser?.id ?? null
+})
 
 const refreshSelectedCity = async () => {
   const selectedCityId = getData('cityId')
@@ -99,6 +103,8 @@ onMounted(async()=>{
 })
 
 onMounted(() => {
+  const { startHomeTour } = useHomeOnboardingTour()
+
   updateHeaderHeight()
   updateContentBottomPadding()
 
@@ -112,6 +118,8 @@ onMounted(() => {
 
   window.addEventListener('resize', updateHeaderHeight)
   window.addEventListener('resize', updateContentBottomPadding)
+
+  void startHomeTour({ userId: userTourId.value })
 })
 
 onBeforeUnmount(() => {
@@ -154,14 +162,14 @@ onActivated(() => {
           </div>
         </div>
          
-        <div class="city-section">
+        <div class="city-section" data-tour="home-city-section">
             <TwentyText class="section-title">город</TwentyText>
             <div class="cards-lane">
               <CityArea></CityArea>
             </div>
         </div>
 
-        <div class="plot-section">
+        <div class="plot-section" data-tour="home-stories-section">
             <TwentyText class="section-title">выбор сюжета</TwentyText>
             <div class="cards-lane plot-cards-lane">
               <CardSwiper

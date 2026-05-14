@@ -1,6 +1,6 @@
 <template>
     <div class="city-area">
-        <button class="city-area-card" type="button" @click="async () => await navigateTo('/city')">
+        <button class="city-area-card" data-tour="home-city-card" type="button" @click="async () => await navigateTo('/city')">
             <div class="city-illustration">
                 <span class="city-action">вперёд!</span>
             </div>
