@@ -3,6 +3,17 @@ const route = useRoute()
 const authError = ref('')
 const { authenticateProvider, fetchUser } = useStrapiAuth()
 
+const isFreshRegistration = (createdAt: unknown) => {
+  if (typeof createdAt !== 'string')
+    return false
+
+  const createdAtTime = Date.parse(createdAt)
+  if (Number.isNaN(createdAtTime))
+    return false
+
+  return Date.now() - createdAtTime < 10 * 60 * 1000
+}
+
 // Обрабатываем callback от Google
 onMounted(async () => {
   const accessToken = route.query.access_token
@@ -13,7 +24,13 @@ onMounted(async () => {
 
   try {
     await authenticateProvider('google', accessToken)
-    await fetchUser() // Обновляем данные пользователя
+    const user = await fetchUser() // Обновляем данные пользователя
+    const currentUser = user.value as Record<string, unknown> | null | undefined
+    const userId = currentUser?.documentId ?? currentUser?.id
+
+    if (userId != null && isFreshRegistration(currentUser?.createdAt))
+      markHomeTourPendingForUser(String(userId))
+
     await navigateTo(`/general`)
   } catch (error) {
     console.error('Ошибка авторизации:', error)

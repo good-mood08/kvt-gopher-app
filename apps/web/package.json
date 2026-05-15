@@ -28,6 +28,7 @@
     "@yandex/ymaps3-default-ui-theme": "^0.0.24",
     "@yandex/ymaps3-types": "^1.0.19345674",
     "date-fns": "^4.1.0",
+    "driver.js": "^1.4.0",
     "geolib": "^3.3.4",
     "lucide-vue-next": "^1.0.0",
     "nuxt": "^3.16.2",

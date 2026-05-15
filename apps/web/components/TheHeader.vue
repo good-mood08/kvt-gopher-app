@@ -24,18 +24,19 @@ const goToNotifications = async () => {
 }
 </script>
 <template>
-    <div class="header-shell">
+    <div class="header-shell" data-tour="home-header">
         <div class="header">
-            <div class="header-content">
+            <div class="header-content" data-tour="home-profile">
                 <div class="img">
                     <img src="/images/Semen.png" alt="Profile avatar">
                 </div>
 
-                <p class="name">{{ username }}</p>
-                <p class="exp">{{ exp }} EXP</p>
+                <p class="name" data-tour="home-profile-name">{{ username }}</p>
+                <p class="exp" data-tour="home-profile-exp">{{ exp }} EXP</p>
             </div>
             <button
               class="help-mark"
+              data-tour="home-notifications"
               type="button"
               :aria-label="hasUnread ? 'Уведомления, есть непрочитанные' : 'Уведомления'"
               @click.stop="goToNotifications"
