@@ -1,7 +1,26 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 const strapiUrl = process.env.NUXT_PUBLIC_STRAPI_URL || ''
+const enablePwaDev = process.env.NUXT_PWA_DEV === 'true'
 
 export default defineNuxtConfig({
+  app: {
+    head: {
+      htmlAttrs: {
+        lang: 'ru',
+        translate: 'no',
+      },
+      meta: [
+        { name: 'google', content: 'notranslate' },
+      ],
+    },
+  },
+  fonts: {
+    providers: {
+      fontsource: false
+    }
+  },
+  
+
   compatibilityDate: '2026-04-22',
   components: {
     dirs: [
@@ -12,7 +31,7 @@ export default defineNuxtConfig({
     ]
   },
   devtools: { enabled: false },
-  css: ['~/assets/css/tailwind.css', '~/assets/index.css', '@/assets/css/fonts.css'],
+  css: ['~/assets/css/tailwind.css', 'driver.js/dist/driver.css', '~/assets/index.css', '@/assets/css/fonts.css'],
   modules: [
     'vue-yandex-maps/nuxt',
     '@nuxtjs/strapi',
@@ -54,7 +73,7 @@ export default defineNuxtConfig({
       installPrompt: true,
     },
     devOptions: {
-      enabled: true,
+      enabled: enablePwaDev,
     },
   },
   yandexMaps: ({

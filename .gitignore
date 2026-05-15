@@ -13,6 +13,12 @@ coverage
 .output/
 out/
 build
+**/.nuxt/
+**/.output/
+**/dist/
+**/.strapi/
+**/.turbo/
+**/tsconfig.tsbuildinfo
 
 # misc
 .DS_Store

@@ -5,6 +5,10 @@ const { fetchUser } = useStrapiAuth()
 const user = await fetchUser()
 const { find, findOne } = useStrapi()
 const cities = ref<any>(null)
+const userTourId = computed(() => {
+  const currentUser = user.value as Record<string, unknown> | null | undefined
+  return currentUser?.documentId ?? currentUser?.id ?? null
+})
 
 const refreshSelectedCity = async () => {
   const selectedCityId = getData('cityId')
@@ -41,9 +45,6 @@ const updateContentBottomPadding = () => {
 }
 
 onMounted(async()=>{
-
-
-
    isNewMassege.value = await isRead(getData('cityId'))
     async function isRead(id){
       const { find, create, findOne } = useStrapi()
@@ -99,19 +100,24 @@ onMounted(async()=>{
 })
 
 onMounted(() => {
+  const { startHomeTour } = useHomeOnboardingTour()
+
   updateHeaderHeight()
   updateContentBottomPadding()
 
   headerResizeObserver = new ResizeObserver(() => {
     updateHeaderHeight()
   })
-
+  console.log(headerRef.value);
+  
   if (headerRef.value) {
     headerResizeObserver.observe(headerRef.value)
   }
 
   window.addEventListener('resize', updateHeaderHeight)
   window.addEventListener('resize', updateContentBottomPadding)
+
+  void startHomeTour({ userId: userTourId.value })
 })
 
 onBeforeUnmount(() => {
@@ -130,6 +136,7 @@ onActivated(() => {
 
  
     <div class="main" :style="{ '--header-offset': `${headerHeight}px` }">
+        <div class="home-tour-screen" data-tour="home-screen" aria-hidden="true"></div>
         <div ref="headerRef">
           <TheHeader :username="name" @click="async() => await navigateTo('/profile')"/>
         </div>
@@ -154,15 +161,15 @@ onActivated(() => {
           </div>
         </div>
          
-        <div class="city-section">
+        <div class="city-section" data-tour="home-city-section">
             <TwentyText class="section-title">город</TwentyText>
             <div class="cards-lane">
               <CityArea></CityArea>
             </div>
         </div>
 
-        <div class="plot-section">
-            <TwentyText class="section-title">выбор сюжета</TwentyText>
+        <div class="plot-section" data-tour="home-stories-section">
+            <TwentyText class="section-title">выбор карты</TwentyText>
             <div class="cards-lane plot-cards-lane">
               <CardSwiper
                   v-if="cities?.data?.documentId"
@@ -173,7 +180,7 @@ onActivated(() => {
 
       </div>
 
-      <FooterNav />
+      <FooterNav data-tour="footer-nav" />
     </div>
 </template>
   
@@ -185,6 +192,14 @@ onActivated(() => {
     flex-direction: column;
     min-height: 100dvh;
     overflow-x: hidden;
+}
+
+.home-tour-screen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  pointer-events: none;
 }
 
 .display{

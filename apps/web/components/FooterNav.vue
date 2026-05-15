@@ -30,25 +30,25 @@ watch(
     <div class="footer-shell">
       <ul class="footer-grid">
         <li>
-          <button class="footer-btn" @click="onTabClick('главная', '/general')">
+          <button class="footer-btn" data-tour="footer-nav-home" @click="onTabClick('главная', '/general')">
             <House :stroke-width="1.7" class="footer-icon" :class="activeTab === 'главная' ? 'stroke-[#D33030]' : 'stroke-black'" />
             <span :class="activeTab === 'главная' ? 'text-[#D33030]' : 'text-black'">главная</span>
           </button>
         </li>
         <li>
-          <button class="footer-btn" @click="onTabClick('магазин', '/shop')">
+          <button class="footer-btn" data-tour="footer-nav-shop" @click="onTabClick('магазин', '/shop')">
             <ShoppingBag :stroke-width="1.7" class="footer-icon" :class="activeTab === 'магазин' ? 'stroke-[#D33030]' : 'stroke-black'" />
             <span :class="activeTab === 'магазин' ? 'text-[#D33030]' : 'text-black'">магазин</span>
           </button>
         </li>
         <li>
-          <button class="footer-btn" @click="onTabClick('рейтинг', '/rating')">
+          <button class="footer-btn" data-tour="footer-nav-rating" @click="onTabClick('рейтинг', '/rating')">
             <Trophy :stroke-width="1.7" class="footer-icon" :class="activeTab === 'рейтинг' ? 'stroke-[#D33030]' : 'stroke-black'" />
             <span :class="activeTab === 'рейтинг' ? 'text-[#D33030]' : 'text-black'">рейтинг</span>
           </button>
         </li>
         <li>
-          <button class="footer-btn" @click="onTabClick('профиль', '/profile')">
+          <button class="footer-btn" data-tour="footer-nav-profile" @click="onTabClick('профиль', '/profile')">
             <Settings :stroke-width="1.7" class="footer-icon" :class="activeTab === 'профиль' ? 'stroke-[#D33030]' : 'stroke-black'" />
             <span :class="activeTab === 'профиль' ? 'text-[#D33030]' : 'text-black'">профиль</span>
           </button>
