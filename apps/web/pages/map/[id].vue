@@ -99,7 +99,7 @@
 </script>
 
 <template>
-    <div class="app-container">
+    <div class="app-container" >
       <header class="header">
         <div class="header-content">
           <div class="stats-container">
@@ -129,7 +129,7 @@
           </div>
           <div class="map-placeholder">
             <ClientOnly>
-              <Map :points="response.data" :coords-mode="coordsMode" :completed-location-ids="completedLocationIds" />
+              <Map :points="response.data" :coords-mode="coordsMode" :completed-location-ids="completedLocationIds" ы/>
               <template #fallback>
                 <div class="map-loading">Загрузка карты...</div>
               </template>

@@ -5,11 +5,11 @@ const HOME_TOUR_PENDING_STORAGE_KEY = 'kvt.homeTour.v1.pendingUserId'
 
 const tourStepConfigs: DriveStep[] = [
   {
-    element: '[data-tour="home-header"]',
+    element: '[data-tour="home-screen"]',
     popover: {
       title: 'Главная',
       description: 'Это стартовый экран: отсюда удобно перейти к городу, сюжетам, профилю и уведомлениям.',
-      side: 'bottom',
+      side: 'over',
       align: 'center',
     },
   },
@@ -35,7 +35,7 @@ const tourStepConfigs: DriveStep[] = [
     element: '[data-tour="home-profile-exp"]',
     popover: {
       title: 'Опыт',
-      description: 'EXP растёт за активность, прохождение заданий и участие в событиях.',
+      description: 'EXP - внутриигровая валюта растёт за активность, прохождение заданий и участие в событиях.',
       side: 'bottom',
       align: 'start',
     },
@@ -49,38 +49,38 @@ const tourStepConfigs: DriveStep[] = [
       align: 'end',
     },
   },
-  {
-    element: '[data-tour="home-city-section"]',
-    popover: {
-      title: 'Город',
-      description: 'Здесь находится карточка города. Через неё можно перейти к городским событиям.',
-      side: 'right',
-      align: 'start',
-    },
-  },
+  // {
+  //   element: '[data-tour="home-city-section"]',
+  //   popover: {
+  //     title: 'Город',
+  //     description: 'Здесь находится карточка города. Через неё можно перейти к городским событиям.',
+  //     side: 'right',
+  //     align: 'start',
+  //   },
+  // },
   {
     element: '[data-tour="home-city-card"]',
     popover: {
-      title: 'Карточка города',
-      description: 'Откройте её, чтобы посмотреть активности города и записаться на доступные события.',
+      title: 'Город',
+      description: 'Откройте её, чтобы посмотреть активности города и записаться на доступные события и записаться на них.',
       side: 'right',
       align: 'center',
     },
   },
-  {
-    element: '[data-tour="home-stories-section"]',
-    popover: {
-      title: 'Карты историй',
-      description: 'В этом блоке собраны сюжетные карты. Их можно листать горизонтально.',
-      side: 'top',
-      align: 'start',
-    },
-  },
+  // {
+  //   element: '[data-tour="home-stories-section"]',
+  //   popover: {
+  //     title: 'Карты историй',
+  //     description: 'В этом блоке собраны сюжетные карты. Их можно листать горизонтально.',
+  //     side: 'top',
+  //     align: 'start',
+  //   },
+  // },
   {
     element: '[data-tour="home-story-card"]',
     popover: {
-      title: 'Сюжетная карта',
-      description: 'На карте видно название, прогресс и кнопку перехода к выбранной истории.',
+      title: 'Карта',
+      description: 'В ней находяться тематические локации за прохождение которых даеться EXP.',
       side: 'top',
       align: 'center',
     },
@@ -136,7 +136,7 @@ const waitForTourTargets = async () => {
   for (let i = 0; i < 20; i += 1) {
     await nextTick()
 
-    if (document.querySelector('[data-tour="home-header"]') && document.querySelector('[data-tour="footer-nav"]'))
+    if (document.querySelector('[data-tour="home-screen"]') && document.querySelector('[data-tour="footer-nav"]'))
       return
 
     await new Promise(resolve => window.setTimeout(resolve, 100))

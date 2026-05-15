@@ -136,6 +136,7 @@ onActivated(() => {
 
  
     <div class="main" :style="{ '--header-offset': `${headerHeight}px` }">
+        <div class="home-tour-screen" data-tour="home-screen" aria-hidden="true"></div>
         <div ref="headerRef">
           <TheHeader :username="name" @click="async() => await navigateTo('/profile')"/>
         </div>
@@ -168,7 +169,7 @@ onActivated(() => {
         </div>
 
         <div class="plot-section" data-tour="home-stories-section">
-            <TwentyText class="section-title">выбор сюжета</TwentyText>
+            <TwentyText class="section-title">выбор карты</TwentyText>
             <div class="cards-lane plot-cards-lane">
               <CardSwiper
                   v-if="cities?.data?.documentId"
@@ -179,7 +180,7 @@ onActivated(() => {
 
       </div>
 
-      <FooterNav />
+      <FooterNav data-tour="footer-nav" />
     </div>
 </template>
   
@@ -191,6 +192,14 @@ onActivated(() => {
     flex-direction: column;
     min-height: 100dvh;
     overflow-x: hidden;
+}
+
+.home-tour-screen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  pointer-events: none;
 }
 
 .display{
