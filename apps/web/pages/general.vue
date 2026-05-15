@@ -45,9 +45,6 @@ const updateContentBottomPadding = () => {
 }
 
 onMounted(async()=>{
-
-
-
    isNewMassege.value = await isRead(getData('cityId'))
     async function isRead(id){
       const { find, create, findOne } = useStrapi()
@@ -111,7 +108,8 @@ onMounted(() => {
   headerResizeObserver = new ResizeObserver(() => {
     updateHeaderHeight()
   })
-
+  console.log(headerRef.value);
+  
   if (headerRef.value) {
     headerResizeObserver.observe(headerRef.value)
   }

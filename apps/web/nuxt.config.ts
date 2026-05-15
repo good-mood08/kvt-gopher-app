@@ -14,6 +14,13 @@ export default defineNuxtConfig({
       ],
     },
   },
+  fonts: {
+    providers: {
+      fontsource: false
+    }
+  },
+  
+
   compatibilityDate: '2026-04-22',
   components: {
     dirs: [
