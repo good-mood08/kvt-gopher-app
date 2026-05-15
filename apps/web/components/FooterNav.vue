@@ -26,7 +26,7 @@ watch(
 </script>
 
 <template>
-  <nav class="footer-nav" data-tour="footer-nav">
+  <nav class="footer-nav">
     <div class="footer-shell">
       <ul class="footer-grid">
         <li>
