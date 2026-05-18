@@ -1,26 +1,22 @@
 <script setup lang="ts">
-const props = defineProps({
-  /**
-   * выключена ли кнопка
-   * @default false
-   */
-    disabled: {
-    default: false
-  },
-})
-
+defineProps<{
+  disabled?: boolean
+}>()
 </script>
 
 <template>
-    <button class="button" :disabled="props.disabled">
-      <TwentyText class="button-action-text"><slot>вперёд!</slot></TwentyText>
-    </button>
-  
+  <button 
+    class="button" 
+    :disabled="disabled"
+    :class="{ 'button-disabled': disabled }"
+  >
+    <TwentyText class="button-action-text">
+      <slot>вперёд!</slot>
+    </TwentyText>
+  </button>
 </template>
 
 <style scoped>
-
-
 .button {
   padding: 12px 48px;
   border-radius: 8px;
@@ -31,17 +27,20 @@ const props = defineProps({
   text-decoration: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s ease;
 }
-
-
 
 .button-action-text {
   color: #FFFFFF;
   font-size: 1.1rem;
   font-weight: 500;
+  pointer-events: none; 
 }
+
+.button.button-disabled,
 .button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  pointer-events: none !important; 
 }
 </style>

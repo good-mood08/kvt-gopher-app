@@ -5,6 +5,9 @@ const { getProviderAuthenticationUrl } = useStrapiAuth()
 const handleGoogleLogin = () => {
   window.location.href = getProviderAuthenticationUrl(`google/`)
 }
+const handleYandexLogin = () => {
+  window.location.href = getProviderAuthenticationUrl(`yandex/`)
+}
 const { find } = useStrapi()
 const cities = ref<any[]>([])
 const hasSelection = ref(false)
@@ -37,8 +40,11 @@ setData('cityId', city, 1 , 'd')
         />
       </div>
 
-      <ButtonAction class="google-button" @click="handleGoogleLogin" :disabled="!hasSelection">
+      <!-- <ButtonAction class="google-button" @click="handleGoogleLogin" :disabled="!hasSelection">
         ВОЙТИ С GOOGLE
+      </ButtonAction> -->
+      <ButtonAction class="google-button" @click="handleYandexLogin" :disabled="!hasSelection">
+        ВОЙТИ С Yandex
       </ButtonAction>
     </div>
     
