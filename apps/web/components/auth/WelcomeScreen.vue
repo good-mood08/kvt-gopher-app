@@ -40,9 +40,9 @@ setData('cityId', city, 1 , 'd')
         />
       </div>
 
-      <ButtonAction class="google-button" @click="handleGoogleLogin" :disabled="!hasSelection">
+      <!-- <ButtonAction class="google-button" @click="handleGoogleLogin" :disabled="!hasSelection">
         ВОЙТИ С GOOGLE
-      </ButtonAction>
+      </ButtonAction> -->
       <ButtonAction class="google-button" @click="handleYandexLogin" :disabled="!hasSelection">
         ВОЙТИ С Yandex
       </ButtonAction>
