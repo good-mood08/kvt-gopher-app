@@ -70,6 +70,59 @@ const rangeCenterCoordinates = computed<[number, number]>(() => ([
   distanceCheckCoords.value.lon,
 ]))
 
+const getPointCoordinates = (point: Point): [number, number] | null => {
+  const lon = Number(point.lon)
+  const lat = Number(point.lat)
+  if (!Number.isFinite(lon) || !Number.isFinite(lat))
+    return null
+
+  return [lon, lat]
+}
+
+const getDistanceMeters = (a: [number, number], b: [number, number]) => {
+  const earthRadiusMeters = 6371000
+  const [lon1, lat1] = a
+  const [lon2, lat2] = b
+  const lat1Rad = (lat1 * Math.PI) / 180
+  const lat2Rad = (lat2 * Math.PI) / 180
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLon = ((lon2 - lon1) * Math.PI) / 180
+  const sinLat = Math.sin(dLat / 2)
+  const sinLon = Math.sin(dLon / 2)
+  const h = sinLat * sinLat + Math.cos(lat1Rad) * Math.cos(lat2Rad) * sinLon * sinLon
+  return 2 * earthRadiusMeters * Math.asin(Math.min(1, Math.sqrt(h)))
+}
+
+const focusTourTarget = () => {
+  const availablePoints = props.points.locations
+    .filter(point => !point.documentId || !completedLocationIdsSet.value.has(point.documentId))
+    .map(point => getPointCoordinates(point))
+    .filter((coords): coords is [number, number] => coords !== null)
+
+  const userCoords: [number, number] = [
+    Number(userCoordinates.value[0]),
+    Number(userCoordinates.value[1]),
+  ]
+
+  if (availablePoints.length === 0 || !Number.isFinite(userCoords[0]) || !Number.isFinite(userCoords[1])) {
+    center_map.value = [...rangeCenterCoordinates.value]
+    return
+  }
+
+  let nearest = availablePoints[0]
+  let nearestDistance = getDistanceMeters(userCoords, nearest)
+
+  for (const pointCoords of availablePoints.slice(1)) {
+    const distance = getDistanceMeters(userCoords, pointCoords)
+    if (distance < nearestDistance) {
+      nearest = pointCoords
+      nearestDistance = distance
+    }
+  }
+
+  center_map.value = [...nearest]
+}
+
 function syncUserCoordinatesFromMarker() {
   const markerCoords = defaultMarker.value?.coordinates
   if (!Array.isArray(markerCoords) || markerCoords.length < 2) return
@@ -290,6 +343,10 @@ async function handleSelectPoint(point: Point) {
 
   await router.push(`/locationStory/${point.documentId}`)
 }
+
+defineExpose({
+  focusTourTarget,
+})
 </script>
 
 <template>
@@ -309,6 +366,7 @@ async function handleSelectPoint(point: Point) {
     <yandex-map-feature :settings="userAccessRadiusFeatureSettings" />
     <yandex-map-feature :settings="userAccessWaveOneFeatureSettings" />
     <yandex-map-feature :settings="userAccessWaveTwoFeatureSettings" />
+    <div data-tour="map-radius" class="sr-only" aria-hidden="true" />
 
     <yandex-map-default-marker
       v-model="defaultMarker"
@@ -347,6 +405,18 @@ async function handleSelectPoint(point: Point) {
   overflow: hidden;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .marker-popup {

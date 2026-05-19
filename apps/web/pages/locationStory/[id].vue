@@ -2,10 +2,19 @@
     <div class="chat-container">
       <div class="chat-window">
         <div class="chat-header">
-          <div class="chat-header-side" aria-hidden="true" />
+          <button
+            type="button"
+            data-tour="story-help"
+            class="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-100"
+            aria-label="Открыть обучение"
+            @click="openTutorial"
+          >
+            <Icon class="text-[22px]" name="material-symbols:help-rounded" />
+          </button>
           <TwelveText class="chat-title">Сюжетный чат</TwelveText>
           <button
             type="button"
+            data-tour="story-audio"
             class="header-audio-btn"
             :class="{ 'is-active': ttsAutoOn || ttsPlaying || ttsLoading }"
             title="Автоозвучка: реплики и варианты ответа; следующая реплика после конца фразы. Повторное нажатие — выключить."
@@ -20,7 +29,7 @@
           </button>
         </div>
         
-        <div ref="messagesRoot" class="messages-container">
+        <div ref="messagesRoot" class="messages-container" data-tour="story-messages">
           <div v-for="(message, index) in visibleMessages" :key="index" class="message-container">
             <ChatMessage
               :author="getAuthor(message.authorId).name"
@@ -34,7 +43,7 @@
           </div>
         </div>
         
-        <div v-if="currentOptions.length > 0" class="options-container">
+        <div v-if="currentOptions.length > 0" class="options-container" data-tour="story-options">
           <TwentyText class="options-title">Выберите ответ</TwentyText>
           <button
             v-for="(option, index) in currentOptions"
@@ -47,7 +56,7 @@
           </button>
         </div>
   
-        <div class="next-message-container">
+        <div class="next-message-container" data-tour="story-next">
           <TwentyText v-if="footerHint" class="chat-footer-hint">{{ footerHint }}</TwentyText>
           <div v-else class="chat-footer-spacer" aria-hidden="true" />
           <button
@@ -111,6 +120,52 @@ const visibleMessages = ref([])
 const currentMessageIndex = ref(0)
 const selectedImage = ref(null)
 const messagesRoot = ref(null)
+const STORY_TUTORIAL_STORAGE_KEY = 'location-story-driver-tour-seen-v1'
+const { startQuestTour } = useQuestOnboardingTour()
+const storyTourSteps = [
+  {
+    element: '[data-tour="story-messages"]',
+    popover: {
+      title: 'Сюжетный чат',
+      description: 'Здесь появляются реплики персонажей и ваши выбранные ответы. Читайте историю по шагам.',
+      side: 'over',
+      align: 'center',
+    },
+  },
+  {
+    element: '[data-tour="story-next"]',
+    popover: {
+      title: 'Следующая реплика',
+      description: 'Нажимайте "Дальше", когда готовы продолжить. В конце кнопка сменится на "Начать игру".',
+      side: 'top',
+      align: 'center',
+    },
+  },
+  {
+    element: '[data-tour="story-options"]',
+    popover: {
+      title: 'Варианты ответа',
+      description: 'Если появятся варианты, выберите один. После выбора история продолжится по соответствующей ветке.',
+      side: 'top',
+      align: 'center',
+    },
+  },
+  {
+    element: '[data-tour="story-audio"]',
+    popover: {
+      title: 'Озвучка',
+      description: 'Динамик включает автоозвучку реплик и вариантов ответа. Повторное нажатие выключает ее.',
+      side: 'bottom',
+      align: 'end',
+    },
+  },
+  {
+    popover: {
+      title: 'Переход к заданию',
+      description: 'Когда сюжет закончится, нажмите "Начать игру", чтобы открыть карточки задания для этой локации.',
+    },
+  },
+]
 
 
 const authorsList = story.data.speakers.map((speaker) => ({
@@ -245,8 +300,25 @@ const closeImageModal = () => {
   document.body.style.overflow = 'auto'
 }
 
+const openTutorial = async () => {
+  await startQuestTour({
+    storageKey: STORY_TUTORIAL_STORAGE_KEY,
+    steps: storyTourSteps,
+    force: true,
+    waitFor: ['[data-tour="story-messages"]', '[data-tour="story-next"]'],
+  })
+}
+
 onMounted(() => {
   showNextMessage()
+
+  setTimeout(() => {
+    void startQuestTour({
+      storageKey: STORY_TUTORIAL_STORAGE_KEY,
+      steps: storyTourSteps,
+      waitFor: ['[data-tour="story-messages"]', '[data-tour="story-next"]'],
+    })
+  }, 500)
 })
 
 onUnmounted(() => {

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { DriveStep } from 'driver.js'
+
 const { params } = useRoute()
 const { findOne, find, create } = useStrapi()
 const { fetchUser } = useStrapiAuth()
@@ -211,6 +213,41 @@ const finalTitle = computed(() => {
   return 'Конец раунда'
 })
 
+const GAME_TUTORIAL_STORAGE_KEY = 'location-game-card-driver-tour-seen-v3'
+const { startQuestTour } = useQuestOnboardingTour()
+const gameTourSteps: DriveStep[] = [
+  {
+    element: '[data-tour="game-progress"]',
+    popover: {
+      title: 'Прогресс задания',
+      description: 'Полоски показывают, сколько карточек уже пройдено и какая карточка активна сейчас.',
+      side: 'bottom',
+      align: 'center',
+    },
+  },
+  {
+    element: '[data-tour="game-card"]',
+    popover: {
+      title: 'Карточка вопроса',
+      description: 'Потяните карточку влево, если утверждение ложное, или вправо, если оно правдивое.',
+      side: 'over',
+      align: 'center',
+    },
+  },
+  {
+    popover: {
+      title: 'Факт после ответа',
+      description: 'После свайпа откроется пояснение. Прочитайте его и свайпните карточку еще раз, чтобы перейти дальше.',
+    },
+  },
+  {
+    popover: {
+      title: 'Как получить зачет',
+      description: 'Нужно ответить верно больше чем на половину карточек. Если не получилось, можно пройти точку еще раз.',
+    },
+  },
+]
+
 function onCardPointerDown(event: PointerEvent) {
   isDragging.value = true
   dragStartX.value = event.clientX - cardOffsetX.value
@@ -305,6 +342,15 @@ function resetToQuestion() {
   pickedAnswer.value = null
   pickedAnswerCorrect.value = null
   revealStage.value = 'idle'
+}
+
+const openTutorial = async () => {
+  await startQuestTour({
+    storageKey: GAME_TUTORIAL_STORAGE_KEY,
+    steps: gameTourSteps,
+    force: true,
+    waitFor: ['[data-tour="game-progress"]', '[data-tour="game-card"]'],
+  })
 }
 
 async function persistLocationProgress() {
@@ -409,6 +455,16 @@ watch(quizFinished, (finished) => {
   finalEntering.value = false
   finalCardOffsetX.value = 0
 })
+
+onMounted(() => {
+  setTimeout(() => {
+    void startQuestTour({
+      storageKey: GAME_TUTORIAL_STORAGE_KEY,
+      steps: gameTourSteps,
+      waitFor: ['[data-tour="game-progress"]', '[data-tour="game-card"]'],
+    })
+  }, 500)
+})
 </script>
 
 <template>
@@ -416,9 +472,21 @@ watch(quizFinished, (finished) => {
     <section class="swipe-lab">
       <div class="lab-grain" aria-hidden="true" />
       <header class="phone-header">
-        <p class="game-title">Архи-факт</p>
+        <div class="flex items-center justify-between gap-3">
+          <div class="h-9 w-9" aria-hidden="true" />
+          <p class="game-title flex-1">Архи-факт</p>
+          <button
+            type="button"
+            data-tour="game-help"
+            class="relative z-10 inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50"
+            aria-label="Открыть обучение"
+            @click="openTutorial"
+          >
+            <Icon class="text-[20px]" name="material-symbols:help-rounded" />
+          </button>
+        </div>
         <p class="location-name">{{ locationName }}</p>
-        <div class="progress-track" :style="progressTrackStyle">
+        <div class="progress-track" :style="progressTrackStyle" data-tour="game-progress">
           <div
             v-for="(_, idx) in testCards"
             :key="idx"
@@ -444,6 +512,7 @@ watch(quizFinished, (finished) => {
 
           <article
             class="fact-card"
+            data-tour="game-card"
             :class="[glowClass, { 'fact-phase': phase === 'fact', 'fact-entering': factEntering, 'fact-correct': phase === 'fact' && pickedAnswerCorrect === true, 'fact-wrong': phase === 'fact' && pickedAnswerCorrect === false }]"
             :style="cardStyle"
             @pointerdown="onCardPointerDown"
@@ -460,7 +529,7 @@ watch(quizFinished, (finished) => {
           </article>
         </div>
 
-        <div class="choice-feedback" :class="choiceFeedbackClass" aria-live="polite">
+        <div class="choice-feedback" :class="choiceFeedbackClass" aria-live="polite" data-tour="game-feedback">
           <template v-if="revealStage === 'idle' && phase === 'question'">
             <span class="choice-pill lie">Влево: Ложь</span>
             <span class="choice-divider" />
@@ -528,6 +597,7 @@ watch(quizFinished, (finished) => {
         </template>
       </template>
     </section>
+
   </div>
 </template>
 

@@ -3,10 +3,19 @@
     <div v-if="isOpen" class="chat-container">
       <div class="chat-window">
         <div class="chat-header">
-          <div class="chat-header-side" aria-hidden="true" />
+          <button
+            type="button"
+            data-tour="map-story-chat-help"
+            class="header-help-btn"
+            aria-label="Открыть обучение чату"
+            @click="openChatTutorial"
+          >
+            <Icon class="header-help-icon" name="material-symbols:help-rounded" />
+          </button>
           <TwelveText class="chat-title">Сюжетный чат</TwelveText>
           <button
             type="button"
+            data-tour="map-story-chat-audio"
             class="header-audio-btn"
             :class="{ 'is-active': ttsAutoOn || ttsPlaying || ttsLoading }"
             title="Автоозвучка: следующая реплика появляется после конца фразы. Повторное нажатие — выключить."
@@ -21,7 +30,7 @@
           </button>
         </div>
         
-        <div ref="messagesRoot" class="messages-container">
+        <div ref="messagesRoot" class="messages-container" data-tour="map-story-chat-messages">
           <div v-for="(message, index) in visibleMessages" :key="index" class="message-container">
             <ChatMessage
               :author="getAuthor(message.authorId).name"
@@ -35,7 +44,7 @@
           </div>
         </div>
 
-        <div v-if="currentOptions.length > 0" class="options-container">
+        <div v-if="currentOptions.length > 0" class="options-container" data-tour="map-story-chat-options">
           <TwentyText class="options-title">Выберите ответ</TwentyText>
           <button
             v-for="(option, index) in currentOptions"
@@ -48,7 +57,7 @@
           </button>
         </div>
 
-        <div class="next-message-container">
+        <div class="next-message-container" data-tour="map-story-chat-next">
           <TwentyText v-if="footerHint" class="chat-footer-hint">{{ footerHint }}</TwentyText>
           <div v-else class="chat-footer-spacer" aria-hidden="true" />
           <button
@@ -128,6 +137,63 @@ const emit = defineEmits(['close'])
 
 const hasSeenDialog = ref(props.hasSeenDialog)
 // console.log(hasSeenDialog.value);
+
+const CHAT_TOUR_STORAGE_KEY = `map-story-chat-driver-tour-seen-v3.${props.mapStoryId}`
+const { startQuestTour, stopQuestTour } = useQuestOnboardingTour()
+let chatTourStartTimer = null
+
+const clearChatTourStartTimer = () => {
+  if (!chatTourStartTimer)
+    return
+
+  window.clearTimeout(chatTourStartTimer)
+  chatTourStartTimer = null
+}
+
+const chatTourSteps = [
+  {
+    element: '[data-tour="map-story-chat-messages"]',
+    popover: {
+      title: 'Сюжетный чат',
+      description: 'Здесь появляются реплики персонажей. Читайте их по порядку, чтобы понять завязку карты.',
+      side: 'over',
+      align: 'center',
+    },
+  },
+  {
+    element: '[data-tour="map-story-chat-next"]',
+    popover: {
+      title: 'Продолжение истории',
+      description: 'Нажимайте "Дальше", когда готовы открыть следующую реплику. Когда история закончится, кнопка закроет чат.',
+      side: 'top',
+      align: 'center',
+    },
+  },
+  {
+    element: '[data-tour="map-story-chat-options"]',
+    popover: {
+      title: 'Выбор ответа',
+      description: 'Если появятся варианты, выберите один ответ. После этого сюжет продолжится по выбранной ветке.',
+      side: 'top',
+      align: 'center',
+    },
+  },
+  {
+    element: '[data-tour="map-story-chat-audio"]',
+    popover: {
+      title: 'Озвучка',
+      description: 'Динамик включает автоозвучку. Следующая реплика появится после окончания фразы.',
+      side: 'bottom',
+      align: 'end',
+    },
+  },
+  {
+    popover: {
+      title: 'После чата',
+      description: 'Закройте историю, и обучение карты продолжится: оно покажет, как выбирать точки и проходить задания.',
+    },
+  },
+]
 
 const isFinished = ref(false)
 
@@ -333,8 +399,26 @@ const handleNextButtonClick = () => {
 }
 
 const close = () => {
+  clearChatTourStartTimer()
   disableTtsAuto()
+  stopQuestTour(true)
   emit('close')
+}
+
+const startChatTour = async (force = false) => {
+  if (!props.isOpen)
+    return
+
+  await startQuestTour({
+    storageKey: CHAT_TOUR_STORAGE_KEY,
+    steps: chatTourSteps,
+    force,
+    waitFor: ['[data-tour="map-story-chat-messages"]', '[data-tour="map-story-chat-next"]'],
+  })
+}
+
+const openChatTutorial = async () => {
+  await startChatTour(true)
 }
 
 const openImageModal = (image) => {
@@ -361,13 +445,21 @@ watch(() => props.isOpen, (newValue) => {
     } else if (visibleMessages.value.length === 0) {
       replaySeenStory()
     }
+
+    clearChatTourStartTimer()
+    chatTourStartTimer = window.setTimeout(() => {
+      chatTourStartTimer = null
+      void startChatTour()
+    }, 650)
   } else {
+    clearChatTourStartTimer()
     document.body.style.overflow = 'auto'
     disableTtsAuto()
   }
 })
 
 onUnmounted(() => {
+  clearChatTourStartTimer()
   disableTtsAuto()
   document.body.style.overflow = 'auto'
 })
@@ -430,12 +522,6 @@ onUnmounted(() => {
   border-top-right-radius: 1rem;
 }
 
-.chat-header-side {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-}
-
 .chat-title {
   flex: 1;
   min-width: 0;
@@ -445,6 +531,7 @@ onUnmounted(() => {
   color: #1f2937;
 }
 
+.header-help-btn,
 .header-audio-btn {
   display: inline-flex;
   align-items: center;
@@ -461,6 +548,7 @@ onUnmounted(() => {
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
+.header-help-btn:hover,
 .header-audio-btn:hover {
   background: #f3f4f6;
   border-color: #d1d5db;
@@ -472,6 +560,7 @@ onUnmounted(() => {
   color: rgba(79, 125, 255, 1);
 }
 
+.header-help-icon,
 .header-audio-icon {
   font-size: 22px;
 }
