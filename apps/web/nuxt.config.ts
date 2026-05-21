@@ -79,32 +79,26 @@ export default defineNuxtConfig({
   yandexMaps: ({
     apikey: '77133e2c-3046-41d4-ac56-5081854e5875',
     cdnLibraryLoading: {
-      // Replace implicit @latest with fixed version to avoid dynamic CDN URL.
       extendLibraries: ['@yandex/ymaps3-default-ui-theme@0.0.24'],
     },
   } as any),
   strapi: {
     url: strapiUrl,
     auth: {
-      populate: ['role'] // Какие поля подгружать у пользователя
+      populate: ['role'] 
     }
   },
-  // Озвучка: Yandex SpeechKit (приоритет, если заданы оба ключа) или ElevenLabs — см. apps/web/.env.example
   runtimeConfig: {
     yandexCloudApiKey: '',
     yandexCloudFolderId: '',
-    /** Голос по умолчанию, если клиент не передал voice (SpeechKit) */
     yandexTtsVoice: 'jane',
     yandexTtsLang: 'ru-RU',
     elevenLabsApiKey: '',
     ttsVoiceId: '',
     ttsModelId: 'eleven_multilingual_v2',
     public: {
-      /** Публичный URL Strapi (API и префикс для `/uploads/...`) */
       strapiUrl,
-      /** Yandex SpeechKit: голос реплик игрока / выбранного ответа (см. voices в доке SpeechKit) */
       ttsYandexVoicePlayer: 'fil',
-      /** Yandex SpeechKit: голос NPC и зачитывания вариантов */
       ttsYandexVoiceNpc: 'jane',
     },
   },
