@@ -113,8 +113,8 @@
     const existing = await find('user-map-stories', {
       filters: {
         users_permissions_user: { documentId: { $eq: userId } },
-        map_story: { documentId: { $eq: story.data.documentId } },
       },
+      pagination: { pageSize: 1 },
     })
     
     if (existing?.data?.length > 0) {

@@ -138,7 +138,7 @@ const emit = defineEmits(['close'])
 const hasSeenDialog = ref(props.hasSeenDialog)
 // console.log(hasSeenDialog.value);
 
-const CHAT_TOUR_STORAGE_KEY = `map-story-chat-driver-tour-seen-v3.${props.mapStoryId}`
+const CHAT_TOUR_STORAGE_KEY = 'map-story-chat-driver-tour-seen-v4'
 const { startQuestTour, stopQuestTour } = useQuestOnboardingTour()
 let chatTourStartTimer = null
 
