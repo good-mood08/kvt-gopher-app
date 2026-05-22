@@ -1,4 +1,6 @@
 <script setup lang="ts">
+  import type { DriveStep } from 'driver.js'
+
   const { params } = useRoute()
   const router = useRouter()
   const { logout,fetchUser  } = useStrapiAuth()
@@ -39,8 +41,53 @@
   const completedLocationIds = progresses.data
     .map(item => item.location?.documentId)
     .filter((id): id is string => typeof id === 'string' && id.length > 0)
+  const mapRef = ref<{ focusTourTarget: () => void } | null>(null)
   const isChatOpen = ref(false)
+  const shouldStartTourAfterChat = ref(false)
   const coordsMode = ref<'fixed' | 'geo'>('geo')
+  const MAP_TUTORIAL_STORAGE_KEY = 'map-quest-driver-tour-seen-v2'
+  const { startQuestTour } = useQuestOnboardingTour()
+  const mapTourSteps: DriveStep[] = [
+    {
+      element: '[data-tour="map-progress"]',
+      popover: {
+        title: 'Прогресс карты',
+        description: 'Здесь видно, сколько локаций уже собрано и сколько осталось пройти.',
+        side: 'bottom',
+        align: 'center',
+      },
+    },
+    {
+      element: '[data-tour="map-canvas"]',
+      popover: {
+        title: 'Карта квеста',
+        description: 'Синие метки - доступные точки маршрута, зеленые - уже пройденные. Нажмите на метку, чтобы открыть карточку локации.',
+        side: 'over',
+        align: 'center',
+      },
+    },
+    {
+      popover: {
+        title: 'Синий радиус',
+        description: 'Это зона доступности вокруг вашей текущей позиции. Когда точка попадает в этот круг, ее можно открыть и засчитать прохождение.',
+      },
+    },
+    {
+      element: '[data-tour="map-chat"]',
+      popover: {
+        title: 'Сюжет карты',
+        description: 'Кнопка открывает общий сюжетный диалог карты. Если он еще не пройден, чат откроется автоматически.',
+        side: 'left',
+        align: 'start',
+      },
+    },
+    {
+      popover: {
+        title: 'Как засчитать точку',
+        description: 'Подойдите к локации, откройте ее карточку и нажмите кнопку выбора. Затем откроется сюжет точки и само задание.',
+      },
+    },
+  ]
   
   const story = await findOne('map-stories', response.value.data.map_story.documentId, {
     populate:{
@@ -66,8 +113,8 @@
     const existing = await find('user-map-stories', {
       filters: {
         users_permissions_user: { documentId: { $eq: userId } },
-        map_story: { documentId: { $eq: story.data.documentId } },
       },
+      pagination: { pageSize: 1 },
     })
     
     if (existing?.data?.length > 0) {
@@ -91,18 +138,56 @@
   
   const closeChat = () => {
     isChatOpen.value = false
+
+    if (!shouldStartTourAfterChat.value)
+      return
+
+    shouldStartTourAfterChat.value = false
+    setTimeout(() => {
+      void startMapTour(true)
+    }, 350)
   }
 
   const toggleCoordsMode = () => {
     coordsMode.value = coordsMode.value === 'fixed' ? 'geo' : 'fixed'
   }
+
+  const startMapTour = async (force = false) => {
+    await startQuestTour({
+      storageKey: MAP_TUTORIAL_STORAGE_KEY,
+      steps: mapTourSteps,
+      force,
+      waitFor: ['[data-tour="map-canvas"]'],
+    })
+  }
+
+  const openTutorial = async () => {
+    if (isChatOpen.value) {
+      shouldStartTourAfterChat.value = true
+      closeChat()
+      return
+    }
+
+    await startMapTour(true)
+  }
+
+  onMounted(() => {
+    if (!hasSeen.value) {
+      shouldStartTourAfterChat.value = true
+      return
+    }
+
+    setTimeout(() => {
+      void startMapTour()
+    }, 700)
+  })
 </script>
 
 <template>
     <div class="app-container" >
       <header class="header">
         <div class="header-content">
-          <div class="stats-container">
+          <div class="stats-container" data-tour="map-progress">
             <MapStat text="собрано" :number="compled"/>
             <MapStat text="осталось" :number="all - compled"/>
           </div>
@@ -119,17 +204,22 @@
               <button @click="async () => await navigateTo('/general')" class="round-button ">
                   <Icon style="font-size: 20px;"  name="material-symbols:reply-rounded"/>
               </button>
-              <button class="mode-button" @click="toggleCoordsMode">
+              <button class="mode-button" @click="toggleCoordsMode" :aria-label="coordsMode === 'fixed' ? 'Включить геолокацию' : 'Включить фиксированную точку'">
                 {{ coordsMode === 'fixed' ? 'фикс' : 'гео' }}
               </button>
             </div>
-            <button class="round-button" @click="openChat" >
-              <Icon style="font-size: 20px;" name="material-symbols:chat-rounded"/>
-            </button>
+            <div class="flex gap-2">
+              <button data-tour="map-chat" class="round-button" @click="openChat" >
+                <Icon style="font-size: 20px;" name="material-symbols:chat-rounded"/>
+              </button>
+              <button data-tour="map-help" class="round-button" @click="openTutorial" aria-label="Открыть обучение">
+                <Icon style="font-size: 20px;" name="material-symbols:help-rounded"/>
+              </button>
+            </div>
           </div>
-          <div class="map-placeholder">
+          <div class="map-placeholder" data-tour="map-canvas">
             <ClientOnly>
-              <Map :points="response.data" :coords-mode="coordsMode" :completed-location-ids="completedLocationIds" ы/>
+              <Map ref="mapRef" :points="response.data" :coords-mode="coordsMode" :completed-location-ids="completedLocationIds" />
               <template #fallback>
                 <div class="map-loading">Загрузка карты...</div>
               </template>
@@ -148,7 +238,7 @@
         :map-story-id="story.data.documentId"
         @close="closeChat"
       />
-    
+
 </template>
   
 <style scoped>
@@ -269,6 +359,16 @@
 .map-loading {
   font-size: 1rem;
   color: #64748b;
+}
+
+.tutorial-fade-enter-active,
+.tutorial-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.tutorial-fade-enter-from,
+.tutorial-fade-leave-to {
+  opacity: 0;
 }
 
 @media (max-width: 768px) {
