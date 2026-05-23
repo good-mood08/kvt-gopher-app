@@ -1,3 +1,5 @@
+import tailwindcss from '@tailwindcss/vite'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 const strapiUrl = process.env.NUXT_PUBLIC_STRAPI_URL || ''
 const enablePwaDev = process.env.NUXT_PWA_DEV === 'true'
@@ -31,15 +33,23 @@ export default defineNuxtConfig({
     ]
   },
   devtools: { enabled: false },
-  css: ['~/assets/css/tailwind.css', 'driver.js/dist/driver.css', '~/assets/index.css', '@/assets/css/fonts.css'],
+  css: [
+    '~/assets/css/main.css',
+    '~/assets/index.css',
+    'driver.js/dist/driver.css',
+    '@/assets/css/fonts.css',
+  ],
   modules: [
     'vue-yandex-maps/nuxt',
     '@nuxtjs/strapi',
     'nuxt-swiper',
     '@nuxt/icon',
     '@nuxt/ui',
-    '@vite-pwa/nuxt'
+    '@vite-pwa/nuxt',
   ],
+  vite: {
+    plugins: [tailwindcss()],
+  },
   pwa: {
     registerType: 'autoUpdate',
     manifest: {

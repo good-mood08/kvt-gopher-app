@@ -1,219 +1,52 @@
-<template>
-  <ComboboxRoot v-model="value" @update:modelValue="handleSelection">
-    <div class="combobox-wrapper">
-      <ComboboxTrigger class="trigger">
-        <ComboboxInput 
-          class="input"
-          :placeholder="placeholder"
-        />
-        <ComboboxAnchor>
-          <span class="icon">▼</span>
-        </ComboboxAnchor>
-      </ComboboxTrigger>
-
-      <ComboboxPortal>
-        <ComboboxContent style="
-            overflow: hidden;
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-            border: 2px solid #e2e8f0;
-            width: auto;
-            margin-top: 8px;
-            max-height: 350px;
-            animation: slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            /* z-index: 10; */
-          " 
-          position="popper">
-        <ComboboxViewport>
-            <ComboboxItem 
-              v-for="(item) in filteredItems" 
-              :key="item.documentId"
-              :value="item.name"
-              class="item"
-            @click="() => {
-              handleItemClick( item.documentId )
-              
-              
-              
-              }"
-            >
-              <ComboboxItemIndicator class="indicator">
-                ✓
-              </ComboboxItemIndicator>
-              {{ item.name }}
-            </ComboboxItem>
-            <TwelveText v-if="filteredItems.length === 0" class="empty-state">
-              No cities found
-            </TwelveText>
-          </ComboboxViewport>
-        </ComboboxContent>
-      </ComboboxPortal>
-    </div>
-  </ComboboxRoot>
-</template>
-
 <script setup>
-import {
-  ComboboxRoot,
-  ComboboxTrigger,
-  ComboboxInput,
-  ComboboxPortal,
-  ComboboxContent,
-  ComboboxViewport,
-  ComboboxItem,
-  ComboboxItemIndicator,
-  ComboboxAnchor,
-} from 'radix-vue'
-import { ref, computed } from 'vue'
-
 const props = defineProps({
-  /**
-   * поле выбора 
-   * @default "Выберите город..."
-   */
-  placeholder: {
-    type: String,
-    default: 'Выберите город...'
-  },
-  /**
-   * массив вариантов
-   * @default []
-   */
-  cities: {
-    type: Array,
-    required: true,
-    default: () => []
-  },
-  /**
-   * выбранный гвариант
-   */
-  value: {
-    type: String,
-    required: false
-  }
+  cities: { type: Array, required: true },
+  placeholder: { type: String, default: 'Выберите город...' },
+  value: { type: Object, default: null } // 1. Принимаем текущий город из профиля
 })
 
 const emit = defineEmits(['update:hasSelection', 'citySelected'])
-const value = ref('')
-value.value = props.value
-const filteredItems = computed(() => {
-  return props.cities
+
+// 2. Инициализируем селект тем, что пришло из профиля
+const selected = ref(props.value)
+
+// 3. Если данные профиля загрузятся чуть позже, обновляем селект
+watch(() => props.value, (newVal) => {
+  selected.value = newVal
 })
 
-const handleSelection = (newValue) => {
-  emit('update:hasSelection', Boolean(newValue))
-}
-
-const handleItemClick = (city, index) => {
-  const originalIndex = props.cities.indexOf(city)
-  emit('citySelected', { city, index: originalIndex })
-}
+watch(selected, (newVal) => {
+  if (newVal) {
+    emit('update:hasSelection', true)
+    emit('citySelected', { city: newVal.documentId })
+  } else {
+    emit('update:hasSelection', false)
+  }
+})
 </script>
 
-<style scoped>
-.combobox-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.trigger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  border-radius: 30px;
-  padding: 14px 18px;
-  gap: 8px;
-  background-color: white;
-  border: 2px solid #00000019;
-  width: 100%;
-}
-
-
-
-.input {
-  width: 100%;
-  border: none;
-  outline: none;
-  font-size: 16px;
-  color: #000000;
-  background: transparent;
-  font-weight: 450;
-  letter-spacing: -0.01em;
-  font-family:'Gothic 60' ;
-  font-size: 12px;
-}
-
-.input::placeholder {
-  color: #000000;
-  font-weight: 400;
-}
-
-.icon {
-  font-size: 10px;
-  color: #000000;
-}
-
-.trigger[data-state="open"] .icon {
-  transform: rotate(180deg);
-}
-
-/* .content {
-  overflow: hidden;
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-  border: 2px solid #e2e8f0;
-  width: auto;
-  margin-top: 8px;
-  max-height: 350px;
-  animation: slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 10;
-} */
-
-.item {
-  padding: 14px 18px;
-  padding-left: 44px;
-  outline: none;
-  cursor: pointer;
-  position: relative;
-  font-size: 15px;
-  color: #1e293b;
-  border-left: 3px solid transparent;
-  font-family:'Gothic 60' ;
-  font-size: 12px;
-}
-
-.item[data-highlighted] {
-  background-color: #477DFF20;
-  border-left-color: #00000020;
-}
-
-.item[data-state="checked"] {
-  background-color: #477DFF20;
-  font-weight: 500;
-  border-left-color: #477DFF20;
-}
-
-.indicator {
-  position: absolute;
-  left: 0;
-  width: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #000000;
-  font-size: 14px;
-}
-
-.empty-state {
-  padding: 20px;
-  text-align: center;
-  color: #000000;
-  font-size: 14px;
-  font-style: italic;
-  background-color: #f8fafc;
-}
-
-
-</style>
+<template>
+  <div class="w-full">
+    <USelectMenu
+      v-model="selected"
+      :items="cities"
+      label-key="name"
+      searchable
+      :search-input="{ 
+        placeholder: 'Поиск города...',
+        ui: { base: 'font-[\'Gothic_60\'] text-[14px] py-3 border-0 ring-0 focus:ring-0 bg-white text-black' }
+      }"
+      :placeholder="placeholder"
+      class="w-full"
+      :ui="{
+        base: 'w-full h-[60px] px-6 rounded-[24px] bg-white border border-black/10 font-[\'Gothic_60\'] text-[14px] text-black uppercase tracking-wider focus:outline-none transition-colors',
+        content: 'w-(--reka-select-trigger-width) bg-white shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-[24px] border border-black/5 p-2 mt-2 ring-0 ring-transparent flex flex-col',
+        viewport: 'relative p-1',
+        item: 'group relative w-full flex items-center select-none outline-none rounded-[16px] px-4 py-3.5 cursor-pointer text-black data-[highlighted]:bg-[#477DFF] data-[highlighted]:text-white transition-colors before:hidden',
+        itemLabel: 'truncate font-[\'Gothic_60\'] uppercase text-[14px]',
+        input: 'border-0 ring-0 focus:ring-0 bg-white text-black placeholder:text-black/30 p-4 font-[\'Gothic_60\'] text-[14px]',
+        empty: 'p-4 text-center text-black/40 font-[\'Gothic_60\'] text-[14px] uppercase'
+      }"
+    />
+  </div>
+</template>

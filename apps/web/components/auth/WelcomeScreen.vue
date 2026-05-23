@@ -32,13 +32,13 @@ setData('cityId', city, 1 , 'd')
       <TwelveText class="welcome-text">Пожалуйста, выберите город, в котором мы начнём</TwelveText>
     </div>
     <div class="container-select">
-        <div class="select-container">
+        <!-- <div class="select-container"> -->
         <CitySelect 
           :cities="cities"
           v-model:hasSelection="hasSelection"
           @citySelected="handleCitySelected"
         />
-      </div>
+      <!-- </div> -->
 
       <!-- <ButtonAction class="google-button" @click="handleGoogleLogin" :disabled="!hasSelection">
         ВОЙТИ С GOOGLE

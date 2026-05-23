@@ -1,6 +1,27 @@
-*{  
-    padding: 0;
+/* Global overrides to ensure app background and defaults take precedence
+     over third-party UI defaults (e.g. @nuxt/ui). */
+:root {
+    --app-bg: #F5F5F5;
+    --app-text: #111827;
+}
+
+html, body, #__nuxt, #__layout {
+    height: 100%;
+}
+
+/* Force app background color to override UI library defaults */
+body {
+    background: var(--app-bg) !important;
+    color: var(--app-text) !important;
     margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Keep basic box-sizing */
+*, *::before, *::after {
     box-sizing: border-box;
 }
+
+/* You can add other global overrides here if needed */
 

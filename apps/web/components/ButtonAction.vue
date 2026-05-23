@@ -20,7 +20,7 @@ defineProps<{
 .button {
   padding: 12px 48px;
   border-radius: 8px;
-  background-color: rgba(79, 125, 255, 1);
+  background-color: #4f7dff;
   display: inline-flex;
   justify-content: center;
   border: none;

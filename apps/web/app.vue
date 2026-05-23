@@ -4,7 +4,7 @@
 
 </script>
 
-<template>
+<template class="bg-[#F5F5F5] ">
   <NuxtPwaManifest />
   <NuxtPage />
 

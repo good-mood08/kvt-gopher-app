@@ -7,7 +7,7 @@ const activeTab = ref('главная')
 const getTabByPath = (path: string) => {
   if (path.startsWith('/shop')) return 'магазин'
   if (path.startsWith('/rating')) return 'рейтинг'
-  if (path.startsWith('/profile') || path.startsWith('/achivments')) return 'профиль'
+  if (path.startsWith('/settings')) return 'настройки'
   return 'главная'
 }
 
@@ -48,9 +48,9 @@ watch(
           </button>
         </li>
         <li>
-          <button class="footer-btn" data-tour="footer-nav-profile" @click="onTabClick('профиль', '/profile')">
-            <Settings :stroke-width="1.7" class="footer-icon" :class="activeTab === 'профиль' ? 'stroke-[#D33030]' : 'stroke-black'" />
-            <span :class="activeTab === 'профиль' ? 'text-[#D33030]' : 'text-black'">профиль</span>
+          <button class="footer-btn" data-tour="footer-nav-profile" @click="onTabClick('настройки', '/settings')">
+            <Settings :stroke-width="1.7" class="footer-icon" :class="activeTab === 'настройки' ? 'stroke-[#D33030]' : 'stroke-black'" />
+            <span :class="activeTab === 'настройки' ? 'text-[#D33030]' : 'text-black'">настройки</span>
           </button>
         </li>
       </ul>

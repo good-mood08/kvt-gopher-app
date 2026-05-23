@@ -253,31 +253,32 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="rating-area-block">
-    <header class="rating-header">
-      <button class="back-btn" type="button" aria-label="Вернуться назад" @click="goBack">
-        <ArrowLeft :stroke-width="2" class="back-icon" />
+  <div class="w-[min(100%,760px)] mx-auto pt-[14px] px-[16px] pb-[104px] flex flex-col gap-[14px]">
+    
+    <header class="relative flex items-center min-h-[40px]">
+      <button class="relative z-[1] w-[40px] h-[40px] rounded-[12px] border border-[#e5e7eb] bg-[#f8fafc] inline-flex items-center justify-center text-[#1f2937] cursor-pointer" type="button" aria-label="Вернуться назад" @click="goBack">
+        <ArrowLeft :stroke-width="2" class="w-[18px] h-[18px]" />
       </button>
-      <TwentyText class="header-title">рейтинг</TwentyText>
+      <TwentyText class="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none w-max max-w-[calc(100%-100px)]">рейтинг</TwentyText>
     </header>
 
-    <div class="rating-head">
-      <p class="rating-subtitle">по прогрессу прохождения локаций в выбранном городе</p>
+    <div class="flex flex-col gap-[6px]">
+      <p class="m-0 text-[#6b7280] text-[13px] leading-[1.35]">по прогрессу прохождения локаций в выбранном городе</p>
     </div>
 
-    <div v-if="isLoading" class="rating-state">
+    <div v-if="isLoading" class="min-h-[64px] w-[calc(100%-2px)] flex justify-center items-center py-[10px] px-[12px] rounded-[16px] bg-[#f3f4f6] border border-[#e5e7eb]">
       <TwentyText>загрузка...</TwentyText>
     </div>
 
-    <div v-else-if="loadError" class="rating-state error">
+    <div v-else-if="loadError" class="min-h-[64px] w-[calc(100%-2px)] flex justify-center items-center py-[10px] px-[12px] rounded-[16px] bg-[#fef2f2] border border-[#fecaca]">
       <TwentyText>{{ loadError }}</TwentyText>
     </div>
 
-    <div v-else-if="ratingItems.length === 0" class="rating-state">
+    <div v-else-if="ratingItems.length === 0" class="min-h-[64px] w-[calc(100%-2px)] flex justify-center items-center py-[10px] px-[12px] rounded-[16px] bg-[#f3f4f6] border border-[#e5e7eb]">
       <TwentyText>данных пока нет</TwentyText>
     </div>
 
-    <div v-else class="rating-list">
+    <div v-else class="flex flex-col gap-[10px]">
       <RatingBlock
         v-for="item in ratingItems"
         :key="item.userDocumentId"
@@ -295,99 +296,3 @@ onMounted(() => {
     <FooterNav />
   </div>
 </template>
-
-<style scoped>
-.rating-area-block{
-    width: min(100%, 760px);
-    margin: 0 auto;
-    padding: 18px 16px 108px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.rating-header {
-  position: relative;
-  display: flex;
-  align-items: center;
-  min-height: 40px;
-}
-
-.header-title {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-  pointer-events: none;
-  width: max-content;
-  max-width: calc(100% - 100px);
-}
-
-.back-btn {
-  position: relative;
-  z-index: 1;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  background: #f8fafc;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #1f2937;
-  cursor: pointer;
-}
-
-.back-icon {
-  width: 18px;
-  height: 18px;
-}
-
-.rating-head {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.rating-subtitle {
-  margin: 0;
-  color: #6b7280;
-  font-size: 14px;
-  line-height: 1.35;
-}
-
-.rating-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.rating-state {
-  min-height: 64px;
-  width: calc(100% - 2px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px 12px;
-  border-radius: 16px;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-}
-
-.rating-state.error {
-  border-color: #fecaca;
-  background: #fef2f2;
-}
-
-@media (max-width: 480px) {
-  .rating-area-block {
-    padding-top: 14px;
-    padding-bottom: 104px;
-  }
-
-  .rating-subtitle {
-    font-size: 13px;
-  }
-}
-
-</style>
