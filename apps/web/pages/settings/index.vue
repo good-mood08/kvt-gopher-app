@@ -126,7 +126,7 @@ const goBack = async () => {
                 </NuxtLink>
             </div>
 
-            <div class="flex flex-col bg-white rounded-[24px] shadow-sm overflow-hidden mt-2">
+            <div class="flex flex-col bg-white rounded-[24px] shadow-sm overflow-hidden mt-2"  @click="() => {logout(), navigateTo('/')}">
                 <button data-amplitude-id="menu-logout" class="flex items-center gap-4 p-5 hover:bg-red-50 transition-colors w-full text-left cursor-pointer">
                     <LogOut class="w-6 h-6 text-red-500" />
                     <span class="flex-1 text-lg font-medium text-red-500">Выйти из аккаунта</span>
