@@ -1,44 +1,59 @@
 type UserNotificationType = 'warning' | 'error' | 'success' | 'info'
 type UserNotificationPriority = 'low' | 'medium' | 'high' | 'critical'
-type UserNotificationCategory = 'security' | 'profile' | 'system'
+type UserNotificationCategory = 'security' | 'profile' | 'system' | 'user' | 'payment' | 'achievement' | 'time'
 
-/**
- * Создаёт запись `user-notigications` для текущего пользователя (JWT).
- * Ошибки только в консоль — игровой флоу не ломаем.
- */
 export function usePushUserNotification() {
-  const { create } = useStrapi()
+  const { create, find } = useStrapi()
   const { fetchUser } = useStrapiAuth()
 
   async function pushUserNotification(options: {
     text: string
+    name: string 
+    category?: UserNotificationCategory 
     type?: UserNotificationType
     priority?: UserNotificationPriority
-    category?: UserNotificationCategory
+    details?: Record<string, any>
   }) {
     try {
       const user = await fetchUser()
-      const userId = user.value?.documentId
-      if (!userId)
-        return
+      const userId = user.value?.documentId || user.value?.DOCUMENTID 
+      if (!userId) return
 
-      const res = await create('user-notigications', {
+      let categoryId = null;
+
+      if (options.category) {
+        try {
+          const catRes = await find('notification-categories', {
+            filters: { name: { $eq: options.category } }
+          }) as any;
+          const foundCat = catRes?.data?.[0];
+          categoryId = foundCat?.documentId || foundCat?.DOCUMENTID;
+        } catch (e) { /* игнорим */ }
+      }
+
+      const payload: Record<string, any> = {
         text: options.text,
+        name: options.name, // Прямая запись твоего текста
         type: options.type ?? 'success',
         priority: options.priority ?? 'low',
-        category: options.category ?? 'system',
-        users_permissions_user: userId,
-        /** иначе запись остаётся черновиком и не попадёт в выдачу с `status=published` */
+        target_type: 'user', 
+        target_user: { connect: [userId] }, 
         publishedAt: new Date().toISOString(),
-      }) as { data?: unknown, error?: { status?: number, message?: string, details?: unknown } }
-
-      if (res?.error) {
-        console.warn('[usePushUserNotification] ответ API с ошибкой', res.error)
       }
+
+      if (options.details && Object.keys(options.details).length > 0) {
+        payload.details = options.details
+      }
+
+      if (categoryId) {
+        payload.category = { connect: [categoryId] }
+      }
+
+      const res = await create('notifications', payload) as { error?: any }
+      if (res?.error) console.warn('Ошибка API', res.error)
     }
     catch (err) {
-      const e = err as { error?: unknown, message?: string }
-      console.warn('[usePushUserNotification] не удалось создать уведомление', e?.error ?? e?.message ?? err)
+      console.warn('Не удалось создать уведомление', err)
     }
   }
 

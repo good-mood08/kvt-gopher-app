@@ -1,212 +1,107 @@
 <template>
-    <div>
-      <NotificationChat 
-        title="Системные уведомления"
-        :notifications="notifications"
-        :show-stats="true"
-        :unread-count="unreadCount"
-        @message-click="handleMessageClick"
-      />
-    </div>
-  </template>
-  <script setup lang="ts">
-  import { getData, setData } from '~/composables/useLocalStore'
-  const { find, create, findOne } = useStrapi()
-  const {  fetchUser } = useStrapiAuth()
-  const user = await fetchUser()
-  const userId = user.value?.documentId
+  <div>
+    <NotificationChat 
+      title="Системные уведомления"
+      :notifications="mappedNotifications"
+      :show-stats="true"
+      @message-click="handleMessageClick"
+    />
+  </div>
+</template>
 
-  const UserNotigication = await find('user-notigications',{
-    populate:{
-      iconUrl:{
-        fields:'url'
-      }
-    },
-    filters:{
-      users_permissions_user: { documentId: { $eq: userId } }
-    }
-  })
-  const CityNotigication = await find('sity-notifications',{
-    populate:{
-      iconUrl:{
-        fields:'url'
-      }
-    },
-    filters:{
-      city: { documentId: { $eq: getData('cityId') }}
-    }
-  })
+<script setup lang="ts">
+import { getData } from '~/composables/useLocalStore'
 
+const { find, create } = useStrapi()
+const { fetchUser } = useStrapiAuth()
 
-  const notifications = ref([...UserNotigication.data, ...CityNotigication.data ])
+const user = await fetchUser()
+const userId = user.value?.documentId || user.value?.DOCUMENTID 
+const cityId = getData('cityId')
 
-async function isRead(id){
-  const { find, create, findOne } = useStrapi()
-  const {  fetchUser } = useStrapiAuth()
-  const user = await fetchUser()
-  const userId = user.value?.documentId
-  const Userexisting = await find('read-notigications', {
-  filters: {
-    users_permissions_user: { documentId: { $eq: userId } },
-    user_notigication: { documentId: { $eq: id } },
-    },
-  })
-  const Cityexisting = await find('read-notigications', {
-  filters: {
-    users_permissions_user: { documentId: { $eq: userId } },
-    sity_notification: { documentId: { $eq: id } },
-    },
-  })
+const normalizeNotification = (item: any, readIds: Set<string>) => {
+  const docId = item.documentId || item.DOCUMENTID;
+  const cat = item.category || item.CATEGORY || {};
 
-  if (Userexisting?.data?.length > 0) {
-
-    return true
+  let parsedDetails = null;
+  const rawDetails = item.details || item.DETAILS;
+  if (rawDetails) {
+    try {
+      parsedDetails = typeof rawDetails === 'string' ? JSON.parse(rawDetails) : rawDetails;
+    } catch (e) { console.error('Ошибка парсинга details', e) }
   }
-  if (Cityexisting?.data?.length > 0) {
-    return true
-  }
-    return false
 
-}
-processItems()
+  const rawPriority = item.priority || item.PRIORITY || 'low';
+  const priorityName = { low: 'Низкий', medium: 'Средний', high: 'Высокий', critical: 'Критический' }[rawPriority.toLowerCase()] || rawPriority;
 
-
-
-// Обрабатываем массив
-async function processItems() {
-  const updatedItems = await Promise.all(
-    notifications.value.map(async (item) => ({
-      ...item,
-      read: await isRead(item.documentId),
-    }))
-  );
-  notifications.value = updatedItems;
-
-  
-}
-
-  // const notifications = ref([
-  //   {
-  //     id: 1,
-  //     type: 'info',
-  //     text: 'Добро пожаловать в центр уведомлений!',
-  //     timestamp: new Date('2025-05-03T10:05:00'),
-  //     priority: 'low',
-  //     read: false,
-  //     category: 'system',
-  //     iconUrl: '/images/blue.png',
-  //     details: {
-  //       title: 'Руководство по началу работы',
-  //       description: 'Добро пожаловать в центр уведомлений',
-  //       items: [
-  //         'Регулярно проверяйте уведомления',
-  //         'Нажмите, чтобы отметить как прочитанное',
-  //         'Используйте фильтры для организации уведомлений'
-  //       ]
-  //     }
-  //   },
-  //   {
-  //     id: 2,
-  //     type: 'success',
-  //     text: 'Ваш профиль успешно обновлен.',
-  //     timestamp: new Date('2024-04-03T10:00:00'),
-  //     priority: 'medium',
-  //     read: true,
-  //     category: 'profile',
-  //     iconUrl: '/images/purpur.png',
-  //     details: {
-  //       title: 'Сводка обновления профиля',
-  //       items: [
-  //         'Информация профиля обновлена',
-  //         'Настройки безопасности изменены',
-  //         'Предпочтения сохранены'
-  //       ]
-  //     }
-  //   },
-  //   {
-  //     id: 3,
-  //     type: 'warning',
-  //     text: 'Пожалуйста, подтвердите ваш email адрес.',
-  //     timestamp: new Date('2024-04-03T10:10:00'),
-  //     priority: 'high',
-  //     read: false,
-  //     category: 'security',
-  //     iconUrl: '/images/blue.png',
-  //     details: {
-  //       title: 'Требуется подтверждение email',
-  //       description: 'Для повышения безопасности требуется подтверждение email',
-  //       items: [
-  //         'Проверьте вашу почту',
-  //         'Нажмите на ссылку подтверждения',
-  //         'Подтвердите вашу личность'
-  //       ]
-  //     }
-  //   },
-  //   {
-  //     id: 4,
-  //     type: 'error',
-  //     text: 'Не удалось подключиться к серверу.',
-  //     timestamp: new Date('2024-05-03T10:15:00'),
-  //     priority: 'critical',
-  //     read: false,
-  //     category: 'system',
-  //     iconUrl: '/images/purpur.png',
-  //     details: {
-  //       title: 'Ошибка подключения',
-  //       description: 'Не удалось установить соединение с сервером',
-  //       items: [
-  //         'Таймаут соединения через 30 секунд',
-  //         'Сервер не отвечает',
-  //         'Статус сети: нестабильный'
-  //       ]
-  //     }
-  //   }
-  // ]);
-  
-  const unreadCount = computed(() => {
-    return notifications.value.filter(notification => !notification.read).length;
-  });
-  
-  async function handleMessageClick(message) {
-  const { find, create, findOne } = useStrapi()
-  const {  fetchUser } = useStrapiAuth()
-  const user = await fetchUser()
-  const userId = user.value?.documentId
-  // console.log('Сообщение нажато:', message);
-  if (!message.read) {
-    try{
-      const Userexisting = await create('read-notigications', {
-        users_permissions_user:userId,
-        user_notigication:message.documentId,
-      })
-
-    }catch(err){
-      
-      // console.log('ошибка создания записи о уведомления по пользователю',err);
-    }
-    try{
-      const Cityexisting = await create('read-notigications', {
-        users_permissions_user: userId,
-        sity_notification: message.documentId,
-      })
-    }catch(err){
-      
-      // console.log('ошибка создания записи о уведомления по городу',err);
-    }
-  }
-  message.read = true
+  return {
+    ...item,
+    id: docId,
+    documentId: docId,
+    read: readIds.has(docId),
+    
+    iconUrl: cat.icon?.url || cat.ICON?.url || '/images/default.png',
+    createdAt: item.createdAt || item.CREATEDAT || item.publishedAt || item.PUBLISHEDAT,
+    
+    categoryName: item.name || item.NAME || 'Уведомление',
+    priorityName: priorityName,
+    priorityClass: rawPriority.toLowerCase(),
+    typeClass: item.type || item.TYPE || 'info',
+    
+    details: parsedDetails 
+  };
 };
-  </script>
-  
-  <style scoped>
-  body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: #f8fafc;
-    color: #1e293b;
+
+const mappedNotifications = ref([])
+
+// Запрос данных
+const [allNotifs, readReceipts] = await Promise.all([
+  find('notifications', {
+    // Подтягиваем категорию, а из неё иконку
+    populate: { category: { populate: { icon: { fields: 'url' } } } },
+    filters: {
+      $or: [
+        { target_user: { documentId: { $eq: userId } } },
+        { target_city: { documentId: { $eq: cityId } } },
+        { target_type: { $eq: 'global' } } 
+      ]
+    }
+  }),
+  find('notification-reads', {
+    populate: ['notification'],
+    filters: { users_permissions_user: { documentId: { $eq: userId } } }
+  })
+])
+
+// Собираем ID прочитанных уведомлений
+const readIds = new Set(readReceipts.data.map((r: any) => {
+  const n = r.notification || r.NOTIFICATION;
+  return n?.documentId || n?.DOCUMENTID;
+}))
+
+mappedNotifications.value = (allNotifs.data || []).map(item => normalizeNotification(item, readIds))
+
+async function handleMessageClick(message: any) {
+  if (message.read) return
+  message.read = true; 
+  try {
+    await create('notification-reads', {
+      users_permissions_user: { connect: [userId] },
+      notification: { connect: [message.documentId] }
+    })
+  } catch (err) {
+    message.read = false; 
+    console.error('Ошибка при отметке уведомления как прочитанного', err)
   }
-  
-  * {
-    box-sizing: border-box;
-  }
-  </style>
+}
+</script>
+
+<style scoped>
+body { 
+  margin: 0; 
+  background-color: #f8fafc; 
+}
+* { 
+  box-sizing: border-box; 
+}
+</style>

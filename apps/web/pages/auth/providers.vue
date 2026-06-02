@@ -8,7 +8,7 @@ const isFreshRegistration = (createdAt?: string | null) => {
   if (!createdAt) return false
   
   const createdAtTime = new Date(createdAt).getTime()
-  return !Number.isNaN(createdAtTime) && (Date.now() - createdAtTime < 600000)
+  return !Number.isNaN(createdAtTime) && (Date.now() - createdAtTime < 6000000)
 }
 
 // Обрабатываем callback от соцсетей

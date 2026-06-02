@@ -112,4 +112,10 @@ export default defineNuxtConfig({
       ttsYandexVoiceNpc: 'jane',
     },
   },
+  colorMode: {
+    preference: 'light', 
+    fallback: 'light',   
+    classSuffix: ''      
+  }
+
 })

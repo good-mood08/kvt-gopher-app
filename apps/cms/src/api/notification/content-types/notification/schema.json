@@ -1,0 +1,74 @@
+{
+  "kind": "collectionType",
+  "collectionName": "notifications",
+  "info": {
+    "singularName": "notification",
+    "pluralName": "notifications",
+    "displayName": "Notification",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "type": {
+      "type": "enumeration",
+      "enum": [
+        "info",
+        "success",
+        "warning",
+        "error"
+      ]
+    },
+    "priority": {
+      "type": "enumeration",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "text": {
+      "type": "string"
+    },
+    "target_type": {
+      "type": "enumeration",
+      "enum": [
+        "user",
+        "city",
+        "global"
+      ]
+    },
+    "target_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "notifications"
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::notification-category.notification-category",
+      "inversedBy": "notifications"
+    },
+    "target_city": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::city.city",
+      "inversedBy": "notifications"
+    },
+    "notification_reads": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::notification-read.notification-read",
+      "mappedBy": "notification"
+    },
+    "details": {
+      "type": "json"
+    },
+    "name": {
+      "type": "string"
+    }
+  }
+}

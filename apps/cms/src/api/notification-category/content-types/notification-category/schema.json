@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "notification_categories",
+  "info": {
+    "singularName": "notification-category",
+    "pluralName": "notification-categories",
+    "displayName": "Notification Category"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "icon": {
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ],
+      "type": "media",
+      "multiple": false
+    },
+    "notifications": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::notification.notification",
+      "mappedBy": "category"
+    }
+  }
+}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, ref, onActivated } from 'vue'
 import { ArrowLeft, CalendarDays, ChevronDown } from 'lucide-vue-next'
 import { getData } from '~/composables/useLocalStore'
 
@@ -9,6 +10,7 @@ type CityEventRow = {
   scheduleText: string
   description: string | null
   expCost: number
+  startsAt: string | null // Точная дата и время из Strapi
 }
 
 /** Только поля из Strapi (REST v5, camelCase); без подстановок с клиента. */
@@ -23,6 +25,10 @@ function normalizeCityEvent(raw: Record<string, unknown>): CityEventRow | null {
   const description = typeof raw.description === 'string' ? raw.description : null
   const slugRaw = (raw as { slug?: unknown }).slug
   const slug = typeof slugRaw === 'string' && slugRaw.trim() ? slugRaw.trim() : null
+
+  // Достаем точную дату из базы
+  const startsAtRaw = (raw as { startsAt?: unknown }).startsAt
+  const startsAt = typeof startsAtRaw === 'string' ? startsAtRaw : null
 
   const expRaw = (raw as { expCost?: unknown }).expCost
   let expCost = 0
@@ -39,6 +45,7 @@ function normalizeCityEvent(raw: Record<string, unknown>): CityEventRow | null {
     scheduleText,
     description,
     expCost,
+    startsAt,
   }
 }
 
@@ -180,19 +187,19 @@ function toggleEventExpanded(documentId: string) {
   }
 }
 
-const bookExcursion = async (eventDocumentId: string, expRequired: number, eventTitle: string) => {
+const bookExcursion = async (item: CityEventRow) => {
   const u = await fetchUser()
   if (!u.value?.documentId) {
     statusText.value = 'Войди в аккаунт, чтобы записаться на мероприятие'
     return
   }
   const userId = u.value.documentId
-  if (isRegistered(eventDocumentId)) {
+  if (isRegistered(item.documentId)) {
     statusText.value = 'Вы уже записаны на это мероприятие'
     return
   }
   await loadOrCreateDataUser()
-  if (exp.value < expRequired) {
+  if (exp.value < item.expCost) {
     statusText.value = 'Недостаточно EXP для записи'
     return
   }
@@ -201,40 +208,65 @@ const bookExcursion = async (eventDocumentId: string, expRequired: number, event
     const dup = await find('city-event-registrations', {
       filters: {
         users_permissions_user: { documentId: { $eq: userId } },
-        city_event: { documentId: { $eq: eventDocumentId } },
+        city_event: { documentId: { $eq: item.documentId } },
       },
       pagination: { pageSize: 1 },
     })
     if ((dup?.data?.length ?? 0) > 0) {
-      registeredEventIds.value = [...new Set([...registeredEventIds.value, eventDocumentId])]
+      registeredEventIds.value = [...new Set([...registeredEventIds.value, item.documentId])]
       statusText.value = 'Вы уже записаны на это мероприятие'
       return
     }
 
-    await addExp(-expRequired)
+    await addExp(-item.expCost)
     try {
       await create('city-event-registrations', {
-        city_event: eventDocumentId,
+        city_event: item.documentId,
         users_permissions_user: userId,
-        expPaid: expRequired,
+        expPaid: item.expCost,
         publishedAt: new Date().toISOString(),
       })
     }
     catch (createErr) {
       try {
-        await addExp(expRequired)
+        await addExp(item.expCost)
       }
       catch {
         /* возврат EXP не удался — залогируем основную ошибку */
       }
       throw createErr
     }
-    registeredEventIds.value = [...registeredEventIds.value, eventDocumentId]
+    registeredEventIds.value = [...registeredEventIds.value, item.documentId]
+
+    // ФОРМАТИРОВАНИЕ ТОЧНОЙ ДАТЫ И ВРЕМЕНИ
+    let formattedDate = item.scheduleText || 'Время не указано';
+    if (item.startsAt) {
+      const d = new Date(item.startsAt);
+      formattedDate = new Intl.DateTimeFormat('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(d);
+    }
+
+    // ОТПРАВКА УВЕДОМЛЕНИЯ С ДЕТАЛЯМИ И СТРОЙНОЙ АРХИТЕКТУРОЙ Поля NAME
     await pushUserNotification({
-      text: `Ты записан на «${eventTitle}». Списано ${expRequired} EXP.`,
-      type: 'info',
-      category: 'system',
+      name: 'Мероприятие',
+      text: `Запись на «${item.title}» подтверждена.`,
+      type: 'success',
+      category: 'time', 
+      details: {
+        title: 'Информация о событии',
+        description: item.description || 'Ждем тебя! Не опаздывай.',
+        items: [
+          `Когда: ${formattedDate}`,
+          `Оплачено: ${item.expCost} EXP`
+        ]
+      }
     })
+
     statusText.value = 'Запись оформлена! Мероприятие в твоих активностях'
   }
   catch (e) {
@@ -321,7 +353,7 @@ const bookExcursion = async (eventDocumentId: string, expRequired: number, event
             <ButtonAction
               class="excursion-btn"
               :disabled="isRegistered(item.documentId)"
-              @click="bookExcursion(item.documentId, item.expCost, item.title)"
+              @click="bookExcursion(item)"
             >
               {{ isRegistered(item.documentId) ? 'записаны' : 'записаться' }}
             </ButtonAction>

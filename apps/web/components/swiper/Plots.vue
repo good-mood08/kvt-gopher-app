@@ -18,14 +18,14 @@ const visualStyle = computed(() => {
 })
 </script>
 <template>
-    <Block class="plot-area-card" data-tour="home-story-card">
+    <Block class="plot-area-card" data-tour="home-story-card" @click="async() => {await navigateTo(`map/${id}`)}"> 
         <div class="plot-name-area">
             <h3 class="plot-title">{{ title }}</h3>
             <div class="plot-percent">{{ percent }}%</div>
         </div>
 
         <div class="plot-visual" :style="visualStyle">
-            <ButtonAction class="plot-cta" @click="async() => {await navigateTo(`map/${id}`)}">вперёд!</ButtonAction>
+            <ButtonAction class="plot-cta">вперёд!</ButtonAction>
         </div>
 
         <p class="plot-description">{{ description }}</p>

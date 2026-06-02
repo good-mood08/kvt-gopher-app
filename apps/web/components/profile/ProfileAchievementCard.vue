@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed, watch } from 'vue'
 import { Loader2 } from 'lucide-vue-next'
 
 const props = withDefaults(
@@ -22,6 +23,7 @@ const emit = defineEmits<{
 
 const { update } = useStrapi()
 const { pushUserNotification } = usePushUserNotification()
+
 const isCollected = ref(props.collected)
 
 /** Цвет карточки: собрано (жёлтое «золото») / можно забрать (сине-серебро) / не выдано (серебро) */
@@ -32,6 +34,7 @@ const surfaceClass = computed(() => {
     return 'achievement-card--surface-locked'
   return 'achievement-card--surface-pending'
 })
+
 const isClaiming = ref(false)
 const claimError = ref('')
 
@@ -50,18 +53,28 @@ const collectAchievement = async () => {
 
   isClaiming.value = true
   claimError.value = ''
+  
   try {
+    // В Strapi 5 метод update отлично работает с documentId
     await update('user-achievements', props.id, { collected: true })
+    
     isCollected.value = true
     emit('collected', props.id)
-    const name = props.title.trim() || 'достижение'
+    
+    // Добавил вопросительный знак для защиты от null
+    const name = props.title?.trim() || 'достижение'
+    
+    // Наш обновленный композабл сам найдет категорию 'profile' в БД
     await pushUserNotification({
+      name: 'достижение',
       text: `«${name}» — забрано в коллекцию.`,
       type: 'success',
-      category: 'profile',
+      category: 'achievement', 
     })
   }
-  catch {
+  catch (err) {
+    // Добавил вывод в консоль для удобного дебага
+    console.error('Ошибка при сборе достижения:', err)
     claimError.value = 'не вышло — попробуй ещё раз'
   }
   finally {

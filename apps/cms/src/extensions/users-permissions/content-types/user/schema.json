@@ -89,16 +89,22 @@
       "target": "api::data-user.data-user",
       "inversedBy": "users_permissions_user"
     },
-    "user_notigications": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::user-notigication.user-notigication",
-      "mappedBy": "users_permissions_user"
-    },
     "city_event_registrations": {
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::city-event-registration.city-event-registration",
+      "mappedBy": "users_permissions_user"
+    },
+    "notifications": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::notification.notification",
+      "mappedBy": "target_user"
+    },
+    "notification_reads": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::notification-read.notification-read",
       "mappedBy": "users_permissions_user"
     }
   }

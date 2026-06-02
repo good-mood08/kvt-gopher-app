@@ -8,47 +8,19 @@
       <div class="header-controls">
         <div class="select-root">
           <SelectRoot v-model="timeFilter" class="select-trigger">
-            <SelectTrigger class="select-trigger">
-              <SelectValue :placeholder="timeFilter" />
-              <SelectIcon>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M2.5 4L6 7.5L9.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </SelectIcon>
-            </SelectTrigger>
-            <SelectPortal>
-              <SelectContent class="select-content">
-                <SelectViewport class="select-viewport" style="background-color: #dadfe6; border-radius: 15px; padding: 5px;">
-                  <SelectItem value="all" class="select-item">
-                    <SelectItemText><TwelveText>Все</TwelveText></SelectItemText>
-                  </SelectItem>
-                  <SelectItem value="today" class="select-item">
-                    <SelectItemText><TwelveText>Сегодня</TwelveText></SelectItemText>
-                  </SelectItem>
-                  <SelectItem value="week" class="select-item">
-                    <SelectItemText><TwelveText>За неделю</TwelveText></SelectItemText>
-                  </SelectItem>
-                  <SelectItem value="month" class="select-item">
-                    <SelectItemText><TwelveText>За месяц</TwelveText></SelectItemText>
-                  </SelectItem>
-                </SelectViewport>
-              </SelectContent>
-            </SelectPortal>
-          </SelectRoot>
+            </SelectRoot>
         </div>
         <div class="header-stats" v-if="showStats && unreadCount > 0">
           <span>{{ unreadCount }}</span>
         </div>
       </div>
     </div>
+    
     <div class="chat-messages" ref="messagesContainer">
       <NotificationMessage
         v-for="message in sortedNotifications"
         :key="message.id"
         v-bind="message"
-        :details="detail(message)"
-        :icon-url="message.iconUrl"
-        :read="message.read"
         @click="$emit('messageClick', message)"
       />
     </div>
@@ -56,94 +28,53 @@
 </template>
 
 <script setup>
+import { computed, ref, watch, nextTick } from 'vue';
 import { startOfToday, startOfWeek, startOfMonth, isAfter } from 'date-fns';
 import {
-  SelectRoot,
-  SelectTrigger,
-  SelectValue,
-  SelectIcon,
-  SelectPortal,
-  SelectContent,
-  SelectViewport,
-  SelectItem,
-  SelectItemText,
+  SelectRoot, SelectTrigger, SelectValue, SelectIcon, SelectPortal,
+  SelectContent, SelectViewport, SelectItem, SelectItemText,
 } from 'radix-vue';
 
 const props = defineProps({
-  /**
-   * название блока уведомлений
-   * @default "Уведомления"
-   */
-  title: {
-    type: String,
-    default: 'Уведомления'
-  },
-  /**
-   * масиив уведомлений
-   * @default []
-   */
-  
-  notifications: {
-    type: Array,
-    required: true,
-    default: () => []
-  },
-  /**
-   * показывать ли статистику по непрочитанным сообщения
-   * @default true
-   */
-  showStats: {
-    type: Boolean,
-    default: true
-  },
-  /**
-   * количества непрочитанных сообщений
-   * @default 0
-   */
-  unreadCount: {
-    type: Number,
-    default: 0
-  }
+  title: { type: String, default: 'Уведомления' },
+  notifications: { type: Array, required: true, default: () => [] },
+  showStats: { type: Boolean, default: true }
 });
-function detail(message) {
-  return new Function(`return ${message.details}`)()
-}
-
-
 
 const emit = defineEmits(['messageClick']);
 const messagesContainer = ref(null);
 const timeFilter = ref('all');
 
-const filteredNotifications = computed(() => {
-  if (timeFilter.value === 'all') {
-    return props.notifications;
-  }
-
-  let startDate;
-  switch (timeFilter.value) {
-    case 'today':
-      startDate = startOfToday();
-      break;
-    case 'week':
-      startDate = startOfWeek(new Date());
-      break;
-    case 'month':
-      startDate = startOfMonth(new Date());
-      break;
-    default:
-      return props.notifications;
-  }
-
-  return props.notifications.filter(notification => 
-    isAfter(new Date(notification.updatedAt), startDate)
-  );
+// Счетчик считаем локально, это ок для UI
+const unreadCount = computed(() => {
+  return props.notifications.filter(n => !n.read).length;
 });
 
+// Фильтрация стала чище, берем готовую дату
+const filteredNotifications = computed(() => {
+  if (timeFilter.value === 'all') return props.notifications;
+
+  let startDate;
+  const now = new Date();
+  
+  switch (timeFilter.value) {
+    case 'today': startDate = startOfToday(); break;
+    case 'week': startDate = startOfWeek(now); break;
+    case 'month': startDate = startOfMonth(now); break;
+    default: return props.notifications;
+  }
+
+  return props.notifications.filter(notification => {
+    // Дата уже нормализована родителем
+    return isAfter(new Date(notification.createdAt), startDate);
+  });
+});
+
+// Сортировка тоже стала проще
 const sortedNotifications = computed(() => {
-  return [...filteredNotifications.value].sort((a, b) => 
-  new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-  );
+  return [...filteredNotifications.value].sort((a, b) => {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(); 
+  });
 });
 
 watch(() => sortedNotifications.value.length, () => {

@@ -1,86 +1,58 @@
+import { ref } from 'vue'
 import { getData } from '~/composables/useLocalStore'
 
-const PAGE_SIZE = 100
-
-async function fetchAllReadRows(
-  find: (c: string, o?: Record<string, unknown>) => Promise<{ data?: unknown[], meta?: { pagination?: { pageCount?: number } } }>,
-  userId: string,
-): Promise<Array<Record<string, unknown>>> {
-  const rows: Array<Record<string, unknown>> = []
-  let page = 1
-  let pageCount = 1
-  do {
-    const res = await find('read-notigications', {
-      filters: { users_permissions_user: { documentId: { $eq: userId } } },
-      populate: {
-        user_notigication: { fields: ['documentId'] },
-        sity_notification: { fields: ['documentId'] },
-      },
-      pagination: { page, pageSize: PAGE_SIZE },
-    })
-    rows.push(...((res?.data ?? []) as Array<Record<string, unknown>>))
-    pageCount = res?.meta?.pagination?.pageCount ?? 1
-    page += 1
-  } while (page <= pageCount)
-  return rows
-}
-
-/**
- * Есть ли непрочитанные уведомления (user + city по выбранному городу), в логике как на /notification.
- */
 export function useNotificationUnread() {
   const hasUnread = ref(false)
 
   async function refresh() {
-    const { find } = useStrapi()
-    const { fetchUser } = useStrapiAuth()
-    hasUnread.value = false
+    try {
+      const { find } = useStrapi()
+      const { fetchUser } = useStrapiAuth()
+      hasUnread.value = false
 
-    const user = await fetchUser()
-    const userId = user.value?.documentId
-    if (!userId) return
+      const user = await fetchUser()
+      const userId = user.value?.documentId || user.value?.DOCUMENTID
+      if (!userId) return
 
-    const userNotiRes = await find('user-notigications', {
-      filters: { users_permissions_user: { documentId: { $eq: userId } } },
-      fields: ['documentId'],
-      pagination: { pageSize: PAGE_SIZE },
-    })
-    const userItems = (userNotiRes?.data ?? []) as Array<Record<string, unknown>>
+      const cityId = getData('cityId')
 
-    const cityId = getData<string>('cityId')
-    let cityItems: Array<Record<string, unknown>> = []
-    if (cityId) {
-      const cityNotiRes = await find('sity-notifications', {
-        filters: { city: { documentId: { $eq: cityId } } },
-        fields: ['documentId'],
-        pagination: { pageSize: PAGE_SIZE },
+      // Делаем запросы к НОВЫМ таблицам
+      const [allNotifs, readReceipts] = await Promise.all([
+        find('notifications', {
+          filters: {
+            $or: [
+              { target_user: { documentId: { $eq: userId } } },
+              { target_city: { documentId: { $eq: cityId } } },
+              { target_type: { $eq: 'global' } }
+            ]
+          },
+          fields: ['documentId'] // Нам нужны только ID для проверки
+        }),
+        find('notification-reads', {
+          populate: ['notification'],
+          filters: { users_permissions_user: { documentId: { $eq: userId } } }
+        })
+      ])
+
+      // Собираем прочитанные
+      const readIds = new Set(
+        (readReceipts.data || []).map((r: any) => {
+          const n = r.notification || r.NOTIFICATION
+          return n?.documentId || n?.DOCUMENTID
+        })
+      )
+
+      // Ищем хоть одно непрочитанное
+      const unreadItems = (allNotifs.data || []).filter((n: any) => {
+        const id = n.documentId || n.DOCUMENTID
+        return !readIds.has(id)
       })
-      cityItems = (cityNotiRes?.data ?? []) as Array<Record<string, unknown>>
-    }
 
-    const readRows = await fetchAllReadRows(find, userId)
-    const readUser = new Set<string>()
-    const readCity = new Set<string>()
-    for (const r of readRows) {
-      const u = r.user_notigication as { documentId?: string } | undefined
-      const s = r.sity_notification as { documentId?: string } | undefined
-      if (u?.documentId != null) readUser.add(String(u.documentId))
-      if (s?.documentId != null) readCity.add(String(s.documentId))
-    }
+      hasUnread.value = unreadItems.length > 0
 
-    for (const n of userItems) {
-      const id = n.documentId
-      if (id != null && !readUser.has(String(id))) {
-        hasUnread.value = true
-        return
-      }
-    }
-    for (const n of cityItems) {
-      const id = n.documentId
-      if (id != null && !readCity.has(String(id))) {
-        hasUnread.value = true
-        return
-      }
+    } catch (e) {
+      console.error("Ошибка проверки уведомлений:", e)
+      hasUnread.value = false
     }
   }
 

@@ -1,7 +1,5 @@
 <script setup lang="ts">
 
-
-
 </script>
 
 <template class="bg-[#F5F5F5] ">

@@ -1,30 +1,21 @@
 <script setup lang="ts">
-import { getData, setData } from '~/composables/useLocalStore'
+import { getData } from '~/composables/useLocalStore'
+import { useNotificationUnread } from '~/composables/useNotificationUnread'
 
 const { fetchUser } = useStrapiAuth()
+const { findOne } = useStrapi()
+
 const user = await fetchUser()
-const { find, findOne } = useStrapi()
-const cities = ref<any>(null)
+const name = computed(() => user.value?.username || '')
+
 const userTourId = computed(() => {
-  const currentUser = user.value as Record<string, unknown> | null | undefined
-  return currentUser?.documentId ?? currentUser?.id ?? null
+  return user.value?.documentId ?? user.value?.id ?? null
 })
 
-const refreshSelectedCity = async () => {
-  const selectedCityId = getData('cityId')
+// 2. Город и уведомления пока пустышки (они загрузятся на клиенте)
+const cities = ref<any>(null)
+const { hasUnread, refresh: refreshUnread } = useNotificationUnread()
 
-  if (!selectedCityId) {
-    cities.value = null
-    return
-  }
-
-  cities.value = await findOne('cities', selectedCityId)
-}
-
-await refreshSelectedCity()
-
-const name = user.value?.username!
-const isNewMassege = ref(false)
 const headerRef = ref<HTMLElement | null>(null)
 const headerHeight = ref(0)
 const contentBottomPadding = ref('104px')
@@ -36,80 +27,33 @@ const updateHeaderHeight = () => {
 }
 
 const updateContentBottomPadding = () => {
-  if (window.innerWidth < 1024) {
-    contentBottomPadding.value = '104px'
-    return
-  }
-
-  contentBottomPadding.value = '126px'
+  contentBottomPadding.value = window.innerWidth < 1024 ? '104px' : '126px'
 }
 
-onMounted(async()=>{
-   isNewMassege.value = await isRead(getData('cityId'))
-    async function isRead(id){
-      const { find, create, findOne } = useStrapi()
-      const {  fetchUser } = useStrapiAuth()
-      const user = await fetchUser()
-      const userId = user.value?.documentId
+const refreshSelectedCity = async () => {
+  // Вызывается только в браузере, так как тут getData(localStorage)
+  const selectedCityId = getData('cityId')
+  if (!selectedCityId) {
+    cities.value = null
+    return
+  }
+  cities.value = await findOne('cities', selectedCityId)
+}
 
-      const existingRead = await find('read-notigications', {
-        populate:{
-            sity_notification:{
-                populate:{
-                    city:true
-                }
-            }
-        },
-      filters: {
-        users_permissions_user: { documentId: { $eq: userId } },
-        },
-      })
-      const filteredRead = existingRead.data.filter(doc => {
-        const docId = doc.sity_notification?.city?.documentId;
-        // Оставляем объект, если documentId НЕ существует ИЛИ равен targetId
-        return docId === undefined || docId === null || docId === id;
-        });
-    //   console.log(filteredRead.length);
-      const Userexisting = await find('user-notigications', {
-        filters: {
-            users_permissions_user: { documentId: { $eq: userId } },
-            },
-        })
-        const Cityexisting = await find('sity-notifications', {
-        filters: {
-        
-            city:{
-                documentId: { $eq: id }   
-            } 
-            
-        },
-        })
-        // console.log(Userexisting.data , Cityexisting.data);
-        
-        if ( ((Userexisting.data.length + Cityexisting.data.length) - filteredRead.length) > 0 ) {
-            // console.log((Userexisting.data.length + Cityexisting.data.length) - filteredRead.length);
-            
-            return true
-        } else {
-            return false
-        }
-      
-    
-    }
+// 3. onMounted запускается только в браузере пользователя
+onMounted(async () => {
+  try {
+    await refreshSelectedCity()
+    await refreshUnread() // Считаем уведомления
+  } catch (err) {
+    console.error('Ошибка загрузки данных:', err)
+  }
 
-})
-
-onMounted(() => {
   const { startHomeTour } = useHomeOnboardingTour()
-
   updateHeaderHeight()
   updateContentBottomPadding()
 
-  headerResizeObserver = new ResizeObserver(() => {
-    updateHeaderHeight()
-  })
-  console.log(headerRef.value);
-  
+  headerResizeObserver = new ResizeObserver(() => updateHeaderHeight())
   if (headerRef.value) {
     headerResizeObserver.observe(headerRef.value)
   }
@@ -117,7 +61,9 @@ onMounted(() => {
   window.addEventListener('resize', updateHeaderHeight)
   window.addEventListener('resize', updateContentBottomPadding)
 
-  void startHomeTour({ userId: userTourId.value })
+  if (userTourId.value) {
+    void startHomeTour({ userId: userTourId.value })
+  }
 })
 
 onBeforeUnmount(() => {
@@ -128,17 +74,15 @@ onBeforeUnmount(() => {
 
 onActivated(() => {
   void refreshSelectedCity()
+  void refreshUnread()
 })
 </script>
 
-
-<template >
-
- 
+<template>
     <div class="main" :style="{ '--header-offset': `${headerHeight}px` }">
         <div class="home-tour-screen" data-tour="home-screen" aria-hidden="true"></div>
         <div ref="headerRef">
-          <TheHeader :username="name" @click="async() => await navigateTo('/profile')"/>
+          <TheHeader :username="name" :has-new="hasUnread" @click="async() => await navigateTo('/profile')"/>
         </div>
         <div class="display" :style="{ paddingBottom: contentBottomPadding }">
         <div class="right-ornaments" aria-hidden="true">
@@ -171,10 +115,12 @@ onActivated(() => {
         <div class="plot-section" data-tour="home-stories-section">
             <TwentyText class="section-title">выбор карты</TwentyText>
             <div class="cards-lane plot-cards-lane">
-              <CardSwiper
-                  v-if="cities?.data?.documentId"
-                  :id="cities.data.documentId"
-              />
+              <ClientOnly>
+                <CardSwiper
+                    v-if="cities?.data?.documentId"
+                    :id="cities.data.documentId"
+                />
+              </ClientOnly>
             </div>      
         </div>
 

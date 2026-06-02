@@ -1,34 +1,32 @@
 <template>
-  <div 
-    class="message" 
-    :class="[type, { 'unread': !read }]" 
-    
-  >
-    <div class="message-content" :class="priority">
+  <div class="message" :class="[typeClass, { 'unread': !read }]">
+    <div class="message-content" :class="priorityClass">
       <div class="message-header">
-        <div class="message-icon" :class="type">
-          <img :src="iconSrc" :alt="type" />
+        <div class="message-icon" :class="typeClass">
+          <img :src="iconSrc" :alt="typeClass" />
         </div>
         <div class="message-meta">
-          <span class="message-category"><TwentyText>{{ translateCategory(category) }}</TwentyText></span>
+          <span class="message-category"><TwentyText>{{ categoryName }}</TwentyText></span>
           <div class="message-time"><TwelveText>{{ formattedDate }}</TwelveText></div>
         </div>
       </div>
       <div class="message-text"><TwelveText>{{ text }}</TwelveText></div>
       <div class="message-footer">
-        <div class="message-priority" :class="priority">
-          <TenText>{{ translatePriority(priority) }}</TenText>
+        <div class="message-priority" :class="priorityClass">
+          <TenText>{{ priorityName }}</TenText>
         </div>
-        <div v-if="details" class="message-details" @click.stop="toggleDetails">
+        
+        <div v-if="hasDetails" class="message-details" @click.stop="toggleDetails">
           <TwelveText>{{ isDetailsOpen ? 'Скрыть детали' : 'Показать детали' }} →</TwelveText>  
         </div>
       </div>
-      <div v-if="details && isDetailsOpen" class="details-panel">
-        <div class="details-title"><TwelveText>{{ details.title }}</TwelveText></div>
+
+      <div v-if="hasDetails && isDetailsOpen" class="details-panel">
+        <div v-if="details.title" class="details-title"><TwelveText>{{ details.title }}</TwelveText></div>
         <div v-if="details.description" class="details-description">
           <TenText>{{ details.description }}</TenText>
         </div>
-        <div v-if="details.items" class="details-items">
+        <div v-if="details.items && details.items.length > 0" class="details-items">
           <ul>
             <li v-for="(item, index) in details.items" :key="index">
               <TwelveText>{{ item }}</TwelveText> 
@@ -41,69 +39,22 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue';
 import { format } from 'date-fns';
 
 const props = defineProps({
-  /**
-   * тип уведомления
-   */
-  type: {
-    type: String,
-    required: true,
-    validator: (value: string) => ['info', 'success', 'warning', 'error'].includes(value)
-  },
-  /**
-   * содержания уведомления
-   */
-  text: {
-    type: String,
-    required: true
-  },
-  /**
-   * время уведомления
-   */
-  updatedAt: {
-    type: Date,
-    required: true
-  },
-  /**
-   * приорететность уведомления
-   */
-  priority: {
-    type: String,
-    required: true,
-    validator: (value: string) => ['low', 'medium', 'high', 'critical'].includes(value)
-  },
-  /**
-   * прочитано ли уведомление
-   * @default false
-   */
-  read: {
-    type: Boolean,
-    default: false
-  },
-  /**
-   * категория уведомления
-   */
-  category: {
-    type: String,
-    required: true
-  },
-  /**
-   * доп информация о уведемлении
-   * @default null
-   */
-  details: {
-    type: Object,
-    default: null
-  },
-  /**
-   * url картинки уведомления
-   */
-  iconUrl: {
-    type: [String, Object],
-    required: true,
-  },
+  text: { type: String, default: '' },
+  createdAt: { type: [Date, String], default: () => new Date() },
+  updatedAt: { type: [Date, String], default: () => new Date() },
+  read: { type: Boolean, default: false },
+  iconUrl: { type: [String, Object], default: '' },
+
+  // Пропсы, которые генерирует наш Маппер
+  typeClass: { type: String, default: 'info' },      // warning, success...
+  priorityClass: { type: String, default: 'low' },   // low, high...
+  categoryName: { type: String, default: 'Система' },// Русское слово
+  priorityName: { type: String, default: 'Низкий' }, // Русское слово
+  details: { type: Object, default: () => ({}) },    // Готовый объект
 })
 
 function iconUrlToPath(icon: unknown): string {
@@ -113,42 +64,26 @@ function iconUrlToPath(icon: unknown): string {
 }
 
 const iconSrc = computed(() => useCmsMedia(iconUrlToPath(props.iconUrl)))
-
-
 const isDetailsOpen = ref(false);
 
 const toggleDetails = () => {
   isDetailsOpen.value = !isDetailsOpen.value;
 };
 
-const formattedDate = computed(() => {
-  return format(new Date(props.updatedAt), 'HH:mm, d MMM');
+// Проверяем, есть ли реальные данные для панели (без парсинга!)
+const hasDetails = computed(() => {
+  if (!props.details) return false;
+  return !!(props.details.title || props.details.description || (props.details.items && props.details.items.length > 0));
 });
 
-const translateCategory = (category: any) => {
-  const categories = {
-    system: 'Система',
-    profile: 'Профиль',
-    security: 'Безопасность',
-    user: 'Пользователь',
-    payment: 'Оплата'
-  };
-  return categories[category] || category;
-};
-
-const translatePriority = (priority: any) => {
-  const priorities = {
-    low: 'Низкий',
-    medium: 'Средний',
-    high: 'Высокий',
-    critical: 'Критический'
-  };
-  return priorities[priority] || priority;
-};
+const formattedDate = computed(() => {
+  const dateVal = props.createdAt || props.updatedAt;
+  if (!dateVal) return '';
+  return format(new Date(dateVal), 'HH:mm, d MMM');
+});
 </script>
 
 <style scoped>
-
 .message {
   margin: 8px 0;
   cursor: pointer;
@@ -329,7 +264,6 @@ const translatePriority = (priority: any) => {
   color: #1d4ed8;
   transform: translateX(4px);
   transition: all 0.3s ease;
-
 }
 
 .details-panel {
@@ -337,7 +271,6 @@ const translatePriority = (priority: any) => {
   padding-top: 16px;
   border-top: 1px solid #f1f5f9;
   animation: fadeIn 0.3s ease;
-  
 }
 
 .details-title {
